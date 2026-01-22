@@ -24,12 +24,13 @@ model User {
   updatedAt           DateTime  @updatedAt
   archivedAt          DateTime?
 
-  watchlist      Watchlist[]
-  savedSearches  SavedSearch[]
-  alerts         Alert[]
-  outreachDrafts OutreachDraft[]
-  sessions       Session[]
-  accounts       Account[]
+  watchlist       Watchlist[]
+  savedSearches   SavedSearch[]
+  alerts          Alert[]
+  outreachDrafts  OutreachDraft[]
+  sessions        Session[]
+  accounts        Account[]
+  jobApplications JobApplication[]
 
   @@index([email])
   @@index([role])
@@ -92,19 +93,33 @@ model Company {
   foundedYear Int?
   logoUrl     String?
   tags        String?   // JSON string for SQLite
+
+  // YC-specific fields
+  ycBatch      String?   // e.g., "W24", "S23"
+  ycUrl        String?   // YC company page
+  ycId         Int?      // YC company ID
+  dataSource   String    @default("INGESTION")  // INGESTION, YC, MANUAL
+  lastSyncedAt DateTime?
+  oneLiner     String?   // Short company description
+  isHiring     Boolean   @default(false)
+
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   archivedAt  DateTime?
 
-  fundingEvents  FundingEvent[]
-  jobPostings    JobPosting[]
-  people         Person[]
-  watchlistedBy  Watchlist[]
-  outreachDrafts OutreachDraft[]
+  fundingEvents   FundingEvent[]
+  jobPostings     JobPosting[]
+  people          Person[]
+  watchlistedBy   Watchlist[]
+  outreachDrafts  OutreachDraft[]
+  jobApplications JobApplication[]
 
   @@index([name])
   @@index([createdAt])
   @@index([country])
+  @@index([dataSource])
+  @@index([ycBatch])
+  @@index([isHiring])
 }
 
 model FundingEvent {
@@ -157,10 +172,17 @@ model Person {
   companyId   String
   name        String
   role        String?
+  title       String?           // More specific job title
+  department  String?           // engineering, hr, sales, etc.
+  seniority   String?           // entry, senior, manager, director, vp, c-level
   linkedinUrl String?
   email       String?
-  source      String    @default("MANUAL")
+  emailStatus String    @default("UNKNOWN")  // VERIFIED, UNVERIFIED, INVALID, UNKNOWN
+  phone       String?
+  source      String    @default("MANUAL")   // MANUAL, APOLLO, HUNTER, LINKEDIN
   sourceUrl   String?
+  confidence  Float?            // 0-1 confidence score from enrichment
+  enrichedAt  DateTime?
   isVerified  Boolean   @default(false)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
@@ -170,6 +192,8 @@ model Person {
 
   @@index([companyId])
   @@index([role])
+  @@index([seniority])
+  @@index([department])
 }
 
 // ============================================
@@ -242,6 +266,46 @@ model OutreachDraft {
   @@index([companyId])
   @@index([status])
   @@index([createdAt])
+}
+
+model JobApplication {
+  id          String    @id @default(cuid())
+  userId      String
+  companyId   String
+  position    String
+  status      String    @default("APPLIED")  // APPLIED, PHONE_SCREEN, TECHNICAL, ONSITE, OFFER, REJECTED, WITHDRAWN
+  appliedAt   DateTime  @default(now())
+  url         String?   // Link to job posting or application
+  source      String?   // CAREERS_PAGE, LINKEDIN, REFERRAL, COLD_OUTREACH
+  notes       String?
+  nextStepAt  DateTime?
+  nextStep    String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  archivedAt  DateTime?
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, companyId, position])
+  @@index([userId])
+  @@index([companyId])
+  @@index([status])
+  @@index([appliedAt])
+}
+
+// ============================================
+// API CREDITS
+// ============================================
+
+model ApiCredits {
+  id           String   @id @default(cuid())
+  provider     String   @unique  // APOLLO, HUNTER, NEWSAPI, CLEARBIT
+  creditsUsed  Int      @default(0)
+  creditsLimit Int
+  resetDate    DateTime
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }
 
 // ============================================
