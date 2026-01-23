@@ -1,9 +1,12 @@
 import { NextAuthOptions } from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
+import LinkedInProvider from 'next-auth/providers/linkedin'
+import { PrismaAdapter } from '@auth/prisma-adapter'
 import bcrypt from 'bcryptjs'
 import { prisma } from './prisma'
 
 export const authOptions: NextAuthOptions = {
+  adapter: PrismaAdapter(prisma) as NextAuthOptions['adapter'],
   session: {
     strategy: 'jwt',
     maxAge: 30 * 24 * 60 * 60, // 30 days
@@ -13,6 +16,15 @@ export const authOptions: NextAuthOptions = {
     error: '/auth/error',
   },
   providers: [
+    LinkedInProvider({
+      clientId: process.env.LINKEDIN_CLIENT_ID || '',
+      clientSecret: process.env.LINKEDIN_CLIENT_SECRET || '',
+      authorization: {
+        params: {
+          scope: 'openid profile email',
+        },
+      },
+    }),
     CredentialsProvider({
       name: 'credentials',
       credentials: {
@@ -55,10 +67,19 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, account }) {
       if (user) {
         token.id = user.id
-        token.role = user.role
+        // For OAuth users, fetch role from database
+        if (account?.provider !== 'credentials') {
+          const dbUser = await prisma.user.findUnique({
+            where: { id: user.id },
+            select: { role: true },
+          })
+          token.role = dbUser?.role || 'USER'
+        } else {
+          token.role = user.role
+        }
       }
       return token
     },

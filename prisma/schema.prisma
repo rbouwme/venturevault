@@ -20,17 +20,20 @@ model User {
   openaiKeyEncrypted  String?
   emailVerified       DateTime?
   image               String?
+  linkedinUrl         String?
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
   archivedAt          DateTime?
 
-  watchlist       Watchlist[]
-  savedSearches   SavedSearch[]
-  alerts          Alert[]
-  outreachDrafts  OutreachDraft[]
-  sessions        Session[]
-  accounts        Account[]
-  jobApplications JobApplication[]
+  watchlist           Watchlist[]
+  savedSearches       SavedSearch[]
+  alerts              Alert[]
+  outreachDrafts      OutreachDraft[]
+  sessions            Session[]
+  accounts            Account[]
+  jobApplications     JobApplication[]
+  folders             Folder[]
+  favoriteIndustries  FavoriteIndustry[]
 
   @@index([email])
   @@index([role])
@@ -292,6 +295,46 @@ model JobApplication {
   @@index([companyId])
   @@index([status])
   @@index([appliedAt])
+}
+
+// ============================================
+// FAVORITES & FOLDERS
+// ============================================
+
+model Folder {
+  id          String    @id @default(cuid())
+  userId      String
+  name        String
+  color       String?   // Hex color for UI
+  icon        String?   // Icon name
+  order       Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  industries  FavoriteIndustry[]
+
+  @@unique([userId, name])
+  @@index([userId])
+  @@index([order])
+}
+
+model FavoriteIndustry {
+  id          String    @id @default(cuid())
+  userId      String
+  industry    String    // Industry name (e.g., "Fintech", "Healthcare")
+  folderId    String?   // Optional folder assignment
+  order       Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  folder      Folder?   @relation(fields: [folderId], references: [id], onDelete: SetNull)
+
+  @@unique([userId, industry])
+  @@index([userId])
+  @@index([folderId])
+  @@index([order])
 }
 
 // ============================================

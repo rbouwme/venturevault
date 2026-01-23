@@ -130,12 +130,24 @@ async function processEvent(
   const threeDaysLater = new Date()
   threeDaysLater.setDate(threeDaysLater.getDate() + 3)
 
+  // SQLite-compatible case-insensitive search
   let company = await prisma.company.findFirst({
     where: {
-      name: { equals: event.companyName, mode: 'insensitive' },
+      name: event.companyName,
       archivedAt: null,
     },
   })
+
+  // Try case-insensitive match if exact match fails
+  if (!company) {
+    const companies = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
+      `SELECT id FROM Company WHERE LOWER(name) = LOWER(?) AND archivedAt IS NULL LIMIT 1`,
+      event.companyName
+    )
+    if (companies.length > 0) {
+      company = await prisma.company.findUnique({ where: { id: companies[0].id } })
+    }
+  }
 
   if (!company) {
     company = await prisma.company.create({

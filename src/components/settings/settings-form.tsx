@@ -13,6 +13,7 @@ interface User {
   name: string | null
   role: string
   openaiKeyEncrypted: string | null
+  linkedinUrl: string | null
 }
 
 interface SettingsFormProps {
@@ -21,6 +22,7 @@ interface SettingsFormProps {
 
 export function SettingsForm({ user }: SettingsFormProps) {
   const [name, setName] = useState(user.name || '')
+  const [linkedinUrl, setLinkedinUrl] = useState(user.linkedinUrl || '')
   const [openaiKey, setOpenaiKey] = useState('')
   const [isLoading, setIsLoading] = useState(false)
 
@@ -34,6 +36,7 @@ export function SettingsForm({ user }: SettingsFormProps) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: name || undefined,
+          linkedinUrl: linkedinUrl || undefined,
           openaiKey: openaiKey || undefined,
         }),
       })
@@ -61,8 +64,8 @@ export function SettingsForm({ user }: SettingsFormProps) {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
-            <Input id="email" value={user.email} disabled className="bg-gray-50" />
-            <p className="text-xs text-gray-500">Email cannot be changed</p>
+            <Input id="email" value={user.email} disabled className="bg-muted" />
+            <p className="text-xs text-muted-foreground">Email cannot be changed</p>
           </div>
 
           <div className="space-y-2">
@@ -76,6 +79,19 @@ export function SettingsForm({ user }: SettingsFormProps) {
           </div>
 
           <div className="space-y-2">
+            <Label htmlFor="linkedinUrl">LinkedIn Profile</Label>
+            <Input
+              id="linkedinUrl"
+              value={linkedinUrl}
+              onChange={(e) => setLinkedinUrl(e.target.value)}
+              placeholder="https://linkedin.com/in/your-profile"
+            />
+            <p className="text-xs text-muted-foreground">
+              Link your LinkedIn profile to enhance your job search experience.
+            </p>
+          </div>
+
+          <div className="space-y-2">
             <Label htmlFor="openaiKey">OpenAI API Key</Label>
             <Input
               id="openaiKey"
@@ -84,7 +100,7 @@ export function SettingsForm({ user }: SettingsFormProps) {
               onChange={(e) => setOpenaiKey(e.target.value)}
               placeholder={user.openaiKeyEncrypted ? '••••••••••••••••' : 'Enter your API key'}
             />
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-muted-foreground">
               Your API key is encrypted and stored securely. Required for AI outreach generation.
             </p>
           </div>

@@ -2,15 +2,65 @@ import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { formatAmount, formatDate, formatRoundType } from '@/lib/utils'
-import type { FundingEventWithCompany } from '@/types'
 
 interface FundingCardProps {
-  event: FundingEventWithCompany
+  event: {
+    id: string
+    companyId: string
+    roundType: string
+    amountCents: string | bigint | null
+    announcedAt: string | Date
+    investors: string | string[] | null
+    leadInvestor?: string | null
+    summary: string | null
+    sourceUrl: string | null
+    sourceName: string | null
+    company: {
+      id: string
+      name: string
+      domain: string | null
+      description: string | null
+      country: string | null
+      state: string | null
+      city: string | null
+      logoUrl: string | null
+      tags: string | string[] | null
+      isHiring?: boolean
+      oneLiner?: string | null
+      ycBatch?: string | null
+      _count?: {
+        jobPostings?: number
+      }
+    }
+  }
+}
+
+function parseTags(tags: string | string[] | null): string[] {
+  if (!tags) return []
+  if (Array.isArray(tags)) return tags
+  try {
+    return JSON.parse(tags)
+  } catch {
+    return []
+  }
+}
+
+function parseInvestors(investors: string | string[] | null): string[] {
+  if (!investors) return []
+  if (Array.isArray(investors)) return investors
+  try {
+    return JSON.parse(investors)
+  } catch {
+    return []
+  }
 }
 
 export function FundingCard({ event }: FundingCardProps) {
   const { company } = event
-  const isHiring = (company._count?.jobPostings ?? 0) > 0
+  const isHiring = company.isHiring || (company._count?.jobPostings ?? 0) > 0
+  const tags = parseTags(company.tags)
+  const investors = parseInvestors(event.investors)
+  const isYCCompany = event.roundType?.startsWith('YC ')
 
   return (
     <Card className="hover:shadow-md transition-shadow">
@@ -18,18 +68,20 @@ export function FundingCard({ event }: FundingCardProps) {
         <div className="flex items-start justify-between">
           <div className="space-y-1">
             <Link href={`/dashboard/companies/${company.id}`}>
-              <CardTitle className="text-lg hover:text-blue-600 transition-colors">
+              <CardTitle className="text-lg hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
                 {company.name}
               </CardTitle>
             </Link>
             {company.domain && (
-              <p className="text-sm text-gray-500">{company.domain}</p>
+              <p className="text-sm text-muted-foreground">{company.domain}</p>
             )}
           </div>
           <div className="flex flex-col items-end gap-2">
-            <Badge variant="secondary">{formatRoundType(event.roundType)}</Badge>
+            <Badge variant={isYCCompany ? "default" : "secondary"} className={isYCCompany ? "bg-orange-500 dark:bg-orange-600" : ""}>
+              {formatRoundType(event.roundType)}
+            </Badge>
             {isHiring && (
-              <Badge className="bg-green-100 text-green-800 hover:bg-green-100">
+              <Badge className="bg-green-100 text-green-800 hover:bg-green-100 dark:bg-green-900 dark:text-green-100 dark:hover:bg-green-900">
                 Hiring
               </Badge>
             )}
@@ -38,22 +90,23 @@ export function FundingCard({ event }: FundingCardProps) {
       </CardHeader>
       <CardContent>
         <div className="space-y-3">
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-gray-600">Amount:</span>
-            <span className="font-semibold text-gray-900">
-              {event.amountCents ? formatAmount(Number(event.amountCents)) : 'Undisclosed'}
-            </span>
-          </div>
+          {!isYCCompany && (
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">Amount:</span>
+              <span className="font-semibold text-foreground">
+                {event.amountCents ? formatAmount(Number(event.amountCents)) : 'Undisclosed'}
+              </span>
+            </div>
+          )}
 
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-gray-600">Announced:</span>
-            <span className="text-gray-900">{formatDate(event.announcedAt)}</span>
-          </div>
+          {company.oneLiner && (
+            <p className="text-sm text-foreground/80 font-medium">{company.oneLiner}</p>
+          )}
 
           {(company.city || company.state || company.country) && (
             <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-600">Location:</span>
-              <span className="text-gray-900">
+              <span className="text-muted-foreground">Location:</span>
+              <span className="text-foreground">
                 {[company.city, company.state, company.country]
                   .filter(Boolean)
                   .join(', ')}
@@ -61,23 +114,23 @@ export function FundingCard({ event }: FundingCardProps) {
             </div>
           )}
 
-          {event.investors && event.investors.length > 0 && (
+          {investors.length > 0 && (
             <div className="text-sm">
-              <span className="text-gray-600">Investors: </span>
-              <span className="text-gray-900">
-                {event.investors.slice(0, 3).join(', ')}
-                {event.investors.length > 3 && ` +${event.investors.length - 3} more`}
+              <span className="text-muted-foreground">Investors: </span>
+              <span className="text-foreground">
+                {investors.slice(0, 3).join(', ')}
+                {investors.length > 3 && ` +${investors.length - 3} more`}
               </span>
             </div>
           )}
 
-          {event.summary && (
-            <p className="text-sm text-gray-600 line-clamp-2">{event.summary}</p>
+          {event.summary && !company.oneLiner && (
+            <p className="text-sm text-muted-foreground line-clamp-2">{event.summary}</p>
           )}
 
-          {company.tags && company.tags.length > 0 && (
+          {tags.length > 0 && (
             <div className="flex flex-wrap gap-1">
-              {company.tags.slice(0, 3).map((tag) => (
+              {tags.slice(0, 3).map((tag) => (
                 <Badge key={tag} variant="outline" className="text-xs">
                   {tag}
                 </Badge>
@@ -86,14 +139,14 @@ export function FundingCard({ event }: FundingCardProps) {
           )}
 
           {event.sourceUrl && (
-            <div className="pt-2 border-t">
+            <div className="pt-2 border-t border-border">
               <a
                 href={event.sourceUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-sm text-blue-600 hover:text-blue-700 hover:underline"
+                className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 hover:underline"
               >
-                View source article →
+                {isYCCompany ? 'View on Y Combinator →' : 'View source article →'}
               </a>
             </div>
           )}

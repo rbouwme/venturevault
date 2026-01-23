@@ -60,9 +60,9 @@ export function FundingFilters() {
   }, [router])
 
   return (
-    <div className="bg-white rounded-lg border p-4 space-y-4">
+    <div className="bg-card rounded-lg border border-border p-4 space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="font-semibold text-gray-900">Filters</h2>
+        <h2 className="font-semibold text-foreground">Filters</h2>
         <Button variant="ghost" size="sm" onClick={clearFilters}>
           Clear all
         </Button>

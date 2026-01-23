@@ -8,6 +8,16 @@ import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
 import type { CompanyWithRelations } from '@/types'
 
+function parseTags(tags: string | string[] | null): string[] {
+  if (!tags) return []
+  if (Array.isArray(tags)) return tags
+  try {
+    return JSON.parse(tags)
+  } catch {
+    return []
+  }
+}
+
 interface CompanyHeaderProps {
   company: CompanyWithRelations
 }
@@ -45,13 +55,13 @@ export function CompanyHeader({ company }: CompanyHeaderProps) {
   const isHiring = company.jobPostings.length > 0
 
   return (
-    <div className="bg-white rounded-lg border p-6">
+    <div className="bg-card rounded-lg border border-border p-6">
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div className="space-y-2">
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold text-gray-900">{company.name}</h1>
+            <h1 className="text-2xl font-bold text-foreground">{company.name}</h1>
             {isHiring && (
-              <Badge className="bg-green-100 text-green-800 hover:bg-green-100">
+              <Badge className="bg-green-100 text-green-800 hover:bg-green-100 dark:bg-green-900 dark:text-green-100 dark:hover:bg-green-900">
                 Hiring
               </Badge>
             )}
@@ -68,15 +78,15 @@ export function CompanyHeader({ company }: CompanyHeaderProps) {
             </a>
           )}
 
-          <div className="flex flex-wrap items-center gap-2 text-sm text-gray-600">
+          <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
             {company.city && <span>{company.city}</span>}
             {company.state && <span>{company.state}</span>}
             {company.country && <span>{company.country}</span>}
           </div>
 
-          {company.tags && company.tags.length > 0 && (
+          {parseTags(company.tags).length > 0 && (
             <div className="flex flex-wrap gap-2 pt-2">
-              {company.tags.map((tag) => (
+              {parseTags(company.tags).map((tag) => (
                 <Badge key={tag} variant="secondary">
                   {tag}
                 </Badge>
@@ -108,16 +118,16 @@ export function CompanyHeader({ company }: CompanyHeaderProps) {
       </div>
 
       {latestFunding && (
-        <div className="mt-4 pt-4 border-t">
-          <p className="text-sm text-gray-600">
+        <div className="mt-4 pt-4 border-t border-border">
+          <p className="text-sm text-muted-foreground">
             Latest funding:{' '}
-            <span className="font-medium text-gray-900">
+            <span className="font-medium text-foreground">
               {latestFunding.roundType.replace('_', ' ')}
             </span>
             {latestFunding.amountCents && (
               <>
                 {' - '}
-                <span className="font-medium text-gray-900">
+                <span className="font-medium text-foreground">
                   ${(Number(latestFunding.amountCents) / 100).toLocaleString()}
                 </span>
               </>
@@ -131,7 +141,7 @@ export function CompanyHeader({ company }: CompanyHeaderProps) {
       <div className="mt-4 flex items-center gap-4">
         <Link
           href="/dashboard"
-          className="text-sm text-gray-600 hover:text-gray-900"
+          className="text-sm text-muted-foreground hover:text-foreground"
         >
           ← Back to Feed
         </Link>

@@ -23,9 +23,9 @@ export async function PUT(request: Request) {
   }
 
   try {
-    const { name, openaiKey } = await request.json()
+    const { name, openaiKey, linkedinUrl } = await request.json()
 
-    const updateData: { name?: string; openaiKeyEncrypted?: string } = {}
+    const updateData: { name?: string; openaiKeyEncrypted?: string; linkedinUrl?: string | null } = {}
 
     if (name !== undefined) {
       updateData.name = name
@@ -35,11 +35,20 @@ export async function PUT(request: Request) {
       updateData.openaiKeyEncrypted = encrypt(openaiKey)
     }
 
+    if (linkedinUrl !== undefined) {
+      // Validate LinkedIn URL format if provided
+      if (linkedinUrl && !linkedinUrl.match(/^https?:\/\/(www\.)?linkedin\.com\/(in|pub)\/[\w-]+\/?$/i)) {
+        return NextResponse.json({ error: 'Invalid LinkedIn URL format. Use format: https://linkedin.com/in/your-profile' }, { status: 400 })
+      }
+      updateData.linkedinUrl = linkedinUrl || null
+    }
+
     const user = await updateUserSettings(session.user.id, updateData)
     return NextResponse.json({
       id: user.id,
       email: user.email,
       name: user.name,
+      linkedinUrl: user.linkedinUrl,
     })
   } catch (error) {
     console.error('Update settings error:', error)

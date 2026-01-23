@@ -165,24 +165,35 @@ export async function syncYCCompanies(): Promise<YCSyncResult> {
           })
           result.companiesUpdated++
         } else {
-          // Check if company exists by name (case-insensitive)
+          // Check if company exists by name (SQLite uses LIKE for case-insensitive)
+          // Use raw query approach for SQLite compatibility
           const existingByName = await prisma.company.findFirst({
             where: {
-              name: { equals: ycCompany.name, mode: 'insensitive' },
+              name: ycCompany.name, // Exact match first
               dataSource: { not: 'YC' },
             },
           })
 
-          if (existingByName) {
+          // Also try lowercase match if exact match fails
+          const existingByNameLower = !existingByName
+            ? await prisma.$queryRawUnsafe<Array<{ id: string; description: string | null; linkedinUrl: string | null; logoUrl: string | null }>>(
+                `SELECT id, description, linkedinUrl, logoUrl FROM Company WHERE LOWER(name) = LOWER(?) AND dataSource != 'YC' LIMIT 1`,
+                ycCompany.name
+              )
+            : null
+
+          const matchedCompany = existingByName || (existingByNameLower && existingByNameLower[0])
+
+          if (matchedCompany) {
             // Update existing company with YC data
             await prisma.company.update({
-              where: { id: existingByName.id },
+              where: { id: matchedCompany.id },
               data: {
                 ...data,
                 // Preserve some existing fields if they have more data
-                description: existingByName.description || data.description,
-                linkedinUrl: existingByName.linkedinUrl,
-                logoUrl: existingByName.logoUrl,
+                description: matchedCompany.description || data.description,
+                linkedinUrl: matchedCompany.linkedinUrl,
+                logoUrl: matchedCompany.logoUrl,
               },
             })
             result.companiesUpdated++

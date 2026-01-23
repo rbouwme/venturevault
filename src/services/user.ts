@@ -73,7 +73,7 @@ export async function createSavedSearch(
   filters: object
 ) {
   return prisma.savedSearch.create({
-    data: { userId, name, filters: JSON.parse(JSON.stringify(filters)) },
+    data: { userId, name, filters: JSON.stringify(filters) },
   })
 }
 
@@ -136,7 +136,7 @@ export async function createAlert(
   email: string
 ) {
   return prisma.alert.create({
-    data: { userId, name, filters: JSON.parse(JSON.stringify(filters)), email },
+    data: { userId, name, filters: JSON.stringify(filters), email },
   })
 }
 
@@ -145,11 +145,11 @@ export async function updateAlert(
   id: string,
   data: { name?: string; filters?: object; email?: string; enabled?: boolean }
 ) {
-  const updateData: { name?: string; filters?: object; email?: string; enabled?: boolean } = {}
+  const updateData: { name?: string; filters?: string; email?: string; enabled?: boolean } = {}
   if (data.name !== undefined) updateData.name = data.name
   if (data.email !== undefined) updateData.email = data.email
   if (data.enabled !== undefined) updateData.enabled = data.enabled
-  if (data.filters !== undefined) updateData.filters = JSON.parse(JSON.stringify(data.filters))
+  if (data.filters !== undefined) updateData.filters = JSON.stringify(data.filters)
 
   return prisma.alert.update({
     where: { id, userId },
@@ -172,13 +172,14 @@ export async function getUserSettings(userId: string) {
       name: true,
       role: true,
       openaiKeyEncrypted: true,
+      linkedinUrl: true,
     },
   })
 }
 
 export async function updateUserSettings(
   userId: string,
-  data: { name?: string; openaiKeyEncrypted?: string }
+  data: { name?: string; openaiKeyEncrypted?: string; linkedinUrl?: string | null }
 ) {
   return prisma.user.update({
     where: { id: userId },

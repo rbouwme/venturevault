@@ -2,6 +2,16 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { detectATS } from '@/lib/utils'
 import type { CompanyWithRelations } from '@/types'
 
+function parseTags(tags: string | string[] | null): string[] {
+  if (!tags) return []
+  if (Array.isArray(tags)) return tags
+  try {
+    return JSON.parse(tags)
+  } catch {
+    return []
+  }
+}
+
 interface CompanyProfileProps {
   company: CompanyWithRelations
 }
@@ -17,12 +27,12 @@ export function CompanyProfile({ company }: CompanyProfileProps) {
       <CardContent className="space-y-4">
         {company.domain && (
           <div>
-            <p className="text-sm font-medium text-gray-500">Website</p>
+            <p className="text-sm font-medium text-muted-foreground">Website</p>
             <a
               href={`https://${company.domain}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-blue-600 hover:underline"
+              className="text-blue-600 hover:underline dark:text-blue-400"
             >
               {company.domain}
             </a>
@@ -31,12 +41,12 @@ export function CompanyProfile({ company }: CompanyProfileProps) {
 
         {company.linkedinUrl && (
           <div>
-            <p className="text-sm font-medium text-gray-500">LinkedIn</p>
+            <p className="text-sm font-medium text-muted-foreground">LinkedIn</p>
             <a
               href={company.linkedinUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-blue-600 hover:underline"
+              className="text-blue-600 hover:underline dark:text-blue-400"
             >
               View Profile
             </a>
@@ -45,12 +55,12 @@ export function CompanyProfile({ company }: CompanyProfileProps) {
 
         {company.careersUrl && (
           <div>
-            <p className="text-sm font-medium text-gray-500">Careers Page</p>
+            <p className="text-sm font-medium text-muted-foreground">Careers Page</p>
             <a
               href={company.careersUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-blue-600 hover:underline"
+              className="text-blue-600 hover:underline dark:text-blue-400"
             >
               View Open Positions
             </a>
@@ -59,31 +69,31 @@ export function CompanyProfile({ company }: CompanyProfileProps) {
 
         {atsType && (
           <div>
-            <p className="text-sm font-medium text-gray-500">ATS Platform</p>
-            <p className="text-gray-900">{atsType}</p>
+            <p className="text-sm font-medium text-muted-foreground">ATS Platform</p>
+            <p className="text-foreground">{atsType}</p>
           </div>
         )}
 
         {company.headcount && (
           <div>
-            <p className="text-sm font-medium text-gray-500">Company Size</p>
-            <p className="text-gray-900">{company.headcount} employees</p>
+            <p className="text-sm font-medium text-muted-foreground">Company Size</p>
+            <p className="text-foreground">{company.headcount} employees</p>
           </div>
         )}
 
         <div>
-          <p className="text-sm font-medium text-gray-500">Location</p>
-          <p className="text-gray-900">
+          <p className="text-sm font-medium text-muted-foreground">Location</p>
+          <p className="text-foreground">
             {[company.city, company.state, company.country]
               .filter(Boolean)
               .join(', ') || 'Not specified'}
           </p>
         </div>
 
-        {company.tags && company.tags.length > 0 && (
+        {parseTags(company.tags).length > 0 && (
           <div>
-            <p className="text-sm font-medium text-gray-500">Industries</p>
-            <p className="text-gray-900">{company.tags.join(', ')}</p>
+            <p className="text-sm font-medium text-muted-foreground">Industries</p>
+            <p className="text-foreground">{parseTags(company.tags).join(', ')}</p>
           </div>
         )}
       </CardContent>
