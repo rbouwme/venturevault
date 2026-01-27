@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth'
 import { getUserSettings, getAlerts } from '@/services/user'
 import { SettingsForm } from '@/components/settings/settings-form'
 import { AlertsManager } from '@/components/settings/alerts-manager'
+import { CreditsDashboard } from '@/components/settings/credits-dashboard'
 
 export default async function SettingsPage() {
   const session = await getServerSession(authOptions)
@@ -29,6 +30,8 @@ export default async function SettingsPage() {
       </div>
 
       <SettingsForm user={user} />
+
+      <CreditsDashboard />
 
       <AlertsManager alerts={alerts} userEmail={user.email} />
     </div>

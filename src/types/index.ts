@@ -69,6 +69,7 @@ export interface FundingFilters {
   country?: string
   state?: string
   city?: string
+  metro?: string
   industry?: string
   minAmount?: number
   maxAmount?: number

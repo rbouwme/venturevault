@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getFundingEvents, getFundingEventsCount } from '@/services/funding'
+import { getMetroArea, buildMetroAreaFilter } from '@/lib/metro-areas'
 import type { FundingFilters } from '@/types'
 
 export async function GET(request: NextRequest) {
@@ -10,6 +11,7 @@ export async function GET(request: NextRequest) {
     country: searchParams.get('country') || undefined,
     state: searchParams.get('state') || undefined,
     city: searchParams.get('city') || undefined,
+    metro: searchParams.get('metro') || undefined,
     industry: searchParams.get('industry') || undefined,
     roundType: searchParams.get('roundType') || undefined,
     minAmount: searchParams.get('minAmount') ? parseInt(searchParams.get('minAmount')!) : undefined,
@@ -50,6 +52,17 @@ export async function GET(request: NextRequest) {
     if (filters.state) where.state = filters.state
     if (filters.hiringNow) where.isHiring = true
     if (filters.industry) where.tags = { contains: filters.industry }
+
+    // Metro area filter: matches by city names + state fallback
+    if (filters.metro) {
+      const metro = getMetroArea(filters.metro)
+      if (metro) {
+        const metroFilter = buildMetroAreaFilter(metro)
+        Object.assign(where, metroFilter)
+      }
+    } else if (filters.city) {
+      where.city = { contains: filters.city }
+    }
 
     const [companies, companyCount] = await Promise.all([
       prisma.company.findMany({

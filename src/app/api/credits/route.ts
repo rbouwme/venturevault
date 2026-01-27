@@ -12,7 +12,22 @@ export async function GET() {
 
   try {
     const credits = await getAllCredits()
-    return NextResponse.json({ credits })
+
+    // Add configuration status for each provider
+    const creditsWithConfig = credits.map((c) => {
+      let configured = false
+      if (c.provider === 'APOLLO') configured = !!process.env.APOLLO_API_KEY
+      if (c.provider === 'HUNTER') configured = !!process.env.HUNTER_API_KEY
+      if (c.provider === 'SNOVIO') configured = !!process.env.SNOVIO_API_KEY
+      if (c.provider === 'NEWSAPI') configured = !!process.env.NEWSAPI_KEY
+
+      return {
+        ...c,
+        configured,
+      }
+    })
+
+    return NextResponse.json({ credits: creditsWithConfig })
   } catch (error) {
     console.error('Get credits error:', error)
     return NextResponse.json(

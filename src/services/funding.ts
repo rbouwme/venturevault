@@ -1,6 +1,25 @@
 import { prisma } from '@/lib/prisma'
 import { Prisma, RoundType } from '@prisma/client'
+import { getMetroArea } from '@/lib/metro-areas'
 import type { FundingFilters, CompanyWithRelations, FundingEventWithCompany } from '@/types'
+
+function buildMetroCompanyConditions(metroId: string): Prisma.CompanyWhereInput | null {
+  const metro = getMetroArea(metroId)
+  if (!metro) return null
+
+  const conditions: Prisma.CompanyWhereInput[] = metro.cities.map((city) => ({
+    city: { contains: city },
+  }))
+
+  if (metro.stateFallback) {
+    conditions.push({
+      state: metro.stateFallback,
+      city: null,
+    })
+  }
+
+  return { OR: conditions }
+}
 
 export async function getFundingEvents(filters: FundingFilters = {}): Promise<FundingEventWithCompany[]> {
   const {
@@ -9,6 +28,7 @@ export async function getFundingEvents(filters: FundingFilters = {}): Promise<Fu
     country,
     state,
     city,
+    metro,
     industry,
     roundType,
     minAmount,
@@ -22,26 +42,35 @@ export async function getFundingEvents(filters: FundingFilters = {}): Promise<Fu
   const thirtyDaysAgo = new Date()
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
 
+  const companyWhere: Prisma.CompanyWhereInput = {
+    archivedAt: null,
+    ...(country && { country }),
+    ...(state && { state }),
+    ...(industry && { tags: { has: industry } }),
+    ...(hiringNow && {
+      jobPostings: {
+        some: {
+          postedAt: { gte: thirtyDaysAgo },
+          archivedAt: null,
+        },
+      },
+    }),
+  }
+
+  // Apply metro area or plain city filter
+  if (metro) {
+    const metroFilter = buildMetroCompanyConditions(metro)
+    if (metroFilter) Object.assign(companyWhere, metroFilter)
+  } else if (city) {
+    companyWhere.city = { contains: city }
+  }
+
   const where: Prisma.FundingEventWhereInput = {
     announcedAt: {
       gte: startDate ? new Date(startDate) : thirtyDaysAgo,
       lte: endDate ? new Date(endDate) : new Date(),
     },
-    company: {
-      archivedAt: null,
-      ...(country && { country }),
-      ...(state && { state }),
-      ...(city && { city: { contains: city, mode: 'insensitive' } }),
-      ...(industry && { tags: { has: industry } }),
-      ...(hiringNow && {
-        jobPostings: {
-          some: {
-            postedAt: { gte: thirtyDaysAgo },
-            archivedAt: null,
-          },
-        },
-      }),
-    },
+    company: companyWhere,
     ...(roundType && { roundType: roundType as RoundType }),
     ...(minAmount && { amountCents: { gte: BigInt(minAmount * 100) } }),
     ...(maxAmount && { amountCents: { lte: BigInt(maxAmount * 100) } }),
@@ -85,6 +114,7 @@ export async function getFundingEventsCount(filters: FundingFilters = {}): Promi
     country,
     state,
     city,
+    metro,
     industry,
     roundType,
     minAmount,
@@ -95,26 +125,34 @@ export async function getFundingEventsCount(filters: FundingFilters = {}): Promi
   const thirtyDaysAgo = new Date()
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
 
+  const companyWhere: Prisma.CompanyWhereInput = {
+    archivedAt: null,
+    ...(country && { country }),
+    ...(state && { state }),
+    ...(industry && { tags: { has: industry } }),
+    ...(hiringNow && {
+      jobPostings: {
+        some: {
+          postedAt: { gte: thirtyDaysAgo },
+          archivedAt: null,
+        },
+      },
+    }),
+  }
+
+  if (metro) {
+    const metroFilter = buildMetroCompanyConditions(metro)
+    if (metroFilter) Object.assign(companyWhere, metroFilter)
+  } else if (city) {
+    companyWhere.city = { contains: city }
+  }
+
   const where: Prisma.FundingEventWhereInput = {
     announcedAt: {
       gte: startDate ? new Date(startDate) : thirtyDaysAgo,
       lte: endDate ? new Date(endDate) : new Date(),
     },
-    company: {
-      archivedAt: null,
-      ...(country && { country }),
-      ...(state && { state }),
-      ...(city && { city: { contains: city, mode: 'insensitive' } }),
-      ...(industry && { tags: { has: industry } }),
-      ...(hiringNow && {
-        jobPostings: {
-          some: {
-            postedAt: { gte: thirtyDaysAgo },
-            archivedAt: null,
-          },
-        },
-      }),
-    },
+    company: companyWhere,
     ...(roundType && { roundType: roundType as RoundType }),
     ...(minAmount && { amountCents: { gte: BigInt(minAmount * 100) } }),
     ...(maxAmount && { amountCents: { lte: BigInt(maxAmount * 100) } }),
@@ -166,8 +204,8 @@ export async function getCompanies(filters: {
     archivedAt: null,
     ...(search && {
       OR: [
-        { name: { contains: search, mode: 'insensitive' } },
-        { domain: { contains: search, mode: 'insensitive' } },
+        { name: { contains: search } },
+        { domain: { contains: search } },
       ],
     }),
     ...(country && { country }),

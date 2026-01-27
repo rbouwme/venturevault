@@ -1,10 +1,11 @@
 import { prisma } from '@/lib/prisma'
 
-export type ApiProvider = 'APOLLO' | 'HUNTER' | 'NEWSAPI'
+export type ApiProvider = 'APOLLO' | 'HUNTER' | 'SNOVIO' | 'NEWSAPI'
 
 interface CreditLimits {
   APOLLO: number
   HUNTER: number
+  SNOVIO: number
   NEWSAPI: number
 }
 
@@ -12,6 +13,7 @@ interface CreditLimits {
 const DEFAULT_LIMITS: CreditLimits = {
   APOLLO: 50, // 50 credits/month
   HUNTER: 25, // 25 searches/month
+  SNOVIO: 50, // 50 credits/month
   NEWSAPI: 500, // 500 requests/day
 }
 
@@ -99,7 +101,7 @@ export async function getRemainingCredits(
  * Get all credit statuses
  */
 export async function getAllCredits() {
-  const providers: ApiProvider[] = ['APOLLO', 'HUNTER', 'NEWSAPI']
+  const providers: ApiProvider[] = ['APOLLO', 'HUNTER', 'SNOVIO', 'NEWSAPI']
   const credits = await Promise.all(providers.map(getCredits))
 
   return credits.map((c) => ({
@@ -109,6 +111,55 @@ export async function getAllCredits() {
     remaining: c.creditsLimit - c.creditsUsed,
     resetDate: c.resetDate,
   }))
+}
+
+export interface ServiceStatus {
+  configured: boolean
+  credits: number
+  limit: number
+  resetDate?: Date
+}
+
+/**
+ * Get available enrichment services with their status
+ */
+export async function getAvailableServices(): Promise<{
+  apollo: ServiceStatus
+  hunter: ServiceStatus
+  snovio: ServiceStatus
+}> {
+  // We'll import these clients after they're created
+  // For now, check env vars
+  const apolloConfigured = !!process.env.APOLLO_API_KEY
+  const hunterConfigured = !!process.env.HUNTER_API_KEY
+  const snovioConfigured = !!process.env.SNOVIO_API_KEY
+
+  const [apolloCredits, hunterCredits, snovioCredits] = await Promise.all([
+    apolloConfigured ? getCredits('APOLLO') : null,
+    hunterConfigured ? getCredits('HUNTER') : null,
+    snovioConfigured ? getCredits('SNOVIO') : null,
+  ])
+
+  return {
+    apollo: {
+      configured: apolloConfigured,
+      credits: apolloCredits ? apolloCredits.creditsLimit - apolloCredits.creditsUsed : 0,
+      limit: apolloCredits?.creditsLimit || DEFAULT_LIMITS.APOLLO,
+      resetDate: apolloCredits?.resetDate,
+    },
+    hunter: {
+      configured: hunterConfigured,
+      credits: hunterCredits ? hunterCredits.creditsLimit - hunterCredits.creditsUsed : 0,
+      limit: hunterCredits?.creditsLimit || DEFAULT_LIMITS.HUNTER,
+      resetDate: hunterCredits?.resetDate,
+    },
+    snovio: {
+      configured: snovioConfigured,
+      credits: snovioCredits ? snovioCredits.creditsLimit - snovioCredits.creditsUsed : 0,
+      limit: snovioCredits?.creditsLimit || DEFAULT_LIMITS.SNOVIO,
+      resetDate: snovioCredits?.resetDate,
+    },
+  }
 }
 
 /**

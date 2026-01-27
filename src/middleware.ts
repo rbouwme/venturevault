@@ -39,6 +39,11 @@ export default withAuth(
           return true
         }
 
+        // Allow cron routes (they have their own auth via CRON_SECRET)
+        if (req.nextUrl.pathname.startsWith('/api/cron')) {
+          return true
+        }
+
         // All other routes require authentication
         return !!token
       },

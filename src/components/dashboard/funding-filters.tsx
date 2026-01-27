@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -15,6 +15,12 @@ import {
 import { Checkbox } from '@/components/ui/checkbox'
 import { ROUND_TYPES, COUNTRIES, US_STATES, CA_PROVINCES, INDUSTRIES, SORT_OPTIONS } from '@/lib/constants'
 
+interface MetroAreaOption {
+  id: string
+  label: string
+  count: number
+}
+
 export function FundingFilters() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -22,20 +28,39 @@ export function FundingFilters() {
   const [country, setCountry] = useState(searchParams.get('country') || 'all')
   const [state, setState] = useState(searchParams.get('state') || 'all')
   const [city, setCity] = useState(searchParams.get('city') || '')
+  const [metro, setMetro] = useState(searchParams.get('metro') || '')
   const [industry, setIndustry] = useState(searchParams.get('industry') || 'all')
   const [roundType, setRoundType] = useState(searchParams.get('roundType') || 'all')
   const [minAmount, setMinAmount] = useState(searchParams.get('minAmount') || '')
   const [maxAmount, setMaxAmount] = useState(searchParams.get('maxAmount') || '')
   const [hiringNow, setHiringNow] = useState(searchParams.get('hiringNow') === 'true')
   const [sortBy, setSortBy] = useState(searchParams.get('sortBy') || 'newest')
+  const [metroAreas, setMetroAreas] = useState<MetroAreaOption[]>([])
 
   const stateOptions = country === 'US' ? US_STATES : country === 'CA' ? CA_PROVINCES : []
+
+  // Fetch metro areas with counts on mount
+  useEffect(() => {
+    async function fetchMetroAreas() {
+      try {
+        const res = await fetch('/api/metro-areas')
+        if (res.ok) {
+          const data = await res.json()
+          setMetroAreas(data.metros || [])
+        }
+      } catch {
+        // Silently fail - buttons just won't show
+      }
+    }
+    fetchMetroAreas()
+  }, [])
 
   const applyFilters = useCallback(() => {
     const params = new URLSearchParams()
     if (country && country !== 'all') params.set('country', country)
     if (state && state !== 'all') params.set('state', state)
-    if (city) params.set('city', city)
+    if (metro) params.set('metro', metro)
+    else if (city) params.set('city', city)
     if (industry && industry !== 'all') params.set('industry', industry)
     if (roundType && roundType !== 'all') params.set('roundType', roundType)
     if (minAmount) params.set('minAmount', minAmount)
@@ -44,12 +69,13 @@ export function FundingFilters() {
     if (sortBy !== 'newest') params.set('sortBy', sortBy)
 
     router.push(`/dashboard?${params.toString()}`)
-  }, [router, country, state, city, industry, roundType, minAmount, maxAmount, hiringNow, sortBy])
+  }, [router, country, state, city, metro, industry, roundType, minAmount, maxAmount, hiringNow, sortBy])
 
   const clearFilters = useCallback(() => {
     setCountry('all')
     setState('all')
     setCity('')
+    setMetro('')
     setIndustry('all')
     setRoundType('all')
     setMinAmount('')
@@ -104,11 +130,37 @@ export function FundingFilters() {
         </div>
 
         <div className="space-y-2">
-          <Label>City</Label>
+          <Label>City / Metro Area</Label>
+          {metroAreas.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-2">
+              {metroAreas.map((area) => (
+                <button
+                  key={area.id}
+                  type="button"
+                  onClick={() => {
+                    if (metro === area.id) {
+                      setMetro('')
+                    } else {
+                      setMetro(area.id)
+                      setCity('')
+                    }
+                  }}
+                  className={`px-2 py-1 text-xs rounded-md border transition-colors ${
+                    metro === area.id
+                      ? 'bg-primary text-primary-foreground border-primary'
+                      : 'bg-background text-muted-foreground border-border hover:bg-accent hover:text-accent-foreground'
+                  }`}
+                  suppressHydrationWarning
+                >
+                  {area.label} ({area.count.toLocaleString()})
+                </button>
+              ))}
+            </div>
+          )}
           <Input
-            placeholder="e.g. San Francisco"
+            placeholder="Or type a city name..."
             value={city}
-            onChange={(e) => setCity(e.target.value)}
+            onChange={(e) => { setCity(e.target.value); setMetro('') }}
           />
         </div>
 

@@ -12,28 +12,31 @@ datasource db {
 // ============================================
 
 model User {
-  id                  String    @id @default(cuid())
-  email               String    @unique
-  name                String?
-  passwordHash        String?
-  role                String    @default("USER")
-  openaiKeyEncrypted  String?
-  emailVerified       DateTime?
-  image               String?
-  linkedinUrl         String?
-  createdAt           DateTime  @default(now())
-  updatedAt           DateTime  @updatedAt
-  archivedAt          DateTime?
+  id                 String    @id @default(cuid())
+  email              String    @unique
+  name               String?
+  passwordHash       String?
+  role               String    @default("USER")
+  openaiKeyEncrypted String?
+  emailVerified      DateTime?
+  image              String?
+  linkedinUrl        String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  archivedAt         DateTime?
 
-  watchlist           Watchlist[]
-  savedSearches       SavedSearch[]
-  alerts              Alert[]
-  outreachDrafts      OutreachDraft[]
-  sessions            Session[]
-  accounts            Account[]
-  jobApplications     JobApplication[]
-  folders             Folder[]
-  favoriteIndustries  FavoriteIndustry[]
+  watchlist          Watchlist[]
+  savedSearches      SavedSearch[]
+  alerts             Alert[]
+  outreachDrafts     OutreachDraft[]
+  sessions           Session[]
+  accounts           Account[]
+  jobApplications    JobApplication[]
+  folders            Folder[]
+  favoriteIndustries FavoriteIndustry[]
+  prospects          Prospect[]
+  prospectNotes      ProspectNote[]
+  recommendations    Recommendation[]
 
   @@index([email])
   @@index([role])
@@ -83,7 +86,7 @@ model VerificationToken {
 // ============================================
 
 model Company {
-  id          String    @id @default(cuid())
+  id          String  @id @default(cuid())
   name        String
   domain      String?
   description String?
@@ -95,20 +98,20 @@ model Company {
   headcount   Int?
   foundedYear Int?
   logoUrl     String?
-  tags        String?   // JSON string for SQLite
+  tags        String? // JSON string for SQLite
 
   // YC-specific fields
-  ycBatch      String?   // e.g., "W24", "S23"
-  ycUrl        String?   // YC company page
-  ycId         Int?      // YC company ID
-  dataSource   String    @default("INGESTION")  // INGESTION, YC, MANUAL
+  ycBatch      String? // e.g., "W24", "S23"
+  ycUrl        String? // YC company page
+  ycId         Int? // YC company ID
+  dataSource   String    @default("INGESTION") // INGESTION, YC, MANUAL
   lastSyncedAt DateTime?
-  oneLiner     String?   // Short company description
+  oneLiner     String? // Short company description
   isHiring     Boolean   @default(false)
 
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  archivedAt  DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  archivedAt DateTime?
 
   fundingEvents   FundingEvent[]
   jobPostings     JobPosting[]
@@ -116,6 +119,9 @@ model Company {
   watchlistedBy   Watchlist[]
   outreachDrafts  OutreachDraft[]
   jobApplications JobApplication[]
+  prospects       Prospect[]
+  prospectSignals ProspectSignal[]
+  recommendations Recommendation[]
 
   @@index([name])
   @@index([createdAt])
@@ -126,18 +132,18 @@ model Company {
 }
 
 model FundingEvent {
-  id           String    @id @default(cuid())
+  id           String   @id @default(cuid())
   companyId    String
-  roundType    String    // Enum as string for SQLite
+  roundType    String // Enum as string for SQLite
   amountCents  BigInt?
   announcedAt  DateTime
-  investors    String?   // JSON string for SQLite
+  investors    String? // JSON string for SQLite
   leadInvestor String?
   summary      String?
   sourceUrl    String?
   sourceName   String?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
@@ -175,16 +181,16 @@ model Person {
   companyId   String
   name        String
   role        String?
-  title       String?           // More specific job title
-  department  String?           // engineering, hr, sales, etc.
-  seniority   String?           // entry, senior, manager, director, vp, c-level
+  title       String? // More specific job title
+  department  String? // engineering, hr, sales, etc.
+  seniority   String? // entry, senior, manager, director, vp, c-level
   linkedinUrl String?
   email       String?
-  emailStatus String    @default("UNKNOWN")  // VERIFIED, UNVERIFIED, INVALID, UNKNOWN
+  emailStatus String    @default("UNKNOWN") // VERIFIED, UNVERIFIED, INVALID, UNKNOWN
   phone       String?
-  source      String    @default("MANUAL")   // MANUAL, APOLLO, HUNTER, LINKEDIN
+  source      String    @default("MANUAL") // MANUAL, APOLLO, HUNTER, LINKEDIN
   sourceUrl   String?
-  confidence  Float?            // 0-1 confidence score from enrichment
+  confidence  Float? // 0-1 confidence score from enrichment
   enrichedAt  DateTime?
   isVerified  Boolean   @default(false)
   createdAt   DateTime  @default(now())
@@ -223,7 +229,7 @@ model SavedSearch {
   id        String   @id @default(cuid())
   userId    String
   name      String
-  filters   String   // JSON string for SQLite
+  filters   String // JSON string for SQLite
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -233,16 +239,16 @@ model SavedSearch {
 }
 
 model Alert {
-  id          String    @id @default(cuid())
-  userId      String
-  name        String
-  filters     String    // JSON string for SQLite
-  email       String
-  enabled     Boolean   @default(true)
-  lastSentAt  DateTime?
-  matchCount  Int       @default(0)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id         String    @id @default(cuid())
+  userId     String
+  name       String
+  filters    String // JSON string for SQLite
+  email      String
+  enabled    Boolean   @default(true)
+  lastSentAt DateTime?
+  matchCount Int       @default(0)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -252,15 +258,15 @@ model Alert {
 }
 
 model OutreachDraft {
-  id          String   @id @default(cuid())
-  userId      String
-  companyId   String
-  type        String   // Enum as string for SQLite
-  subject     String?
-  body        String
-  status      String   @default("DRAFT")
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        String   @id @default(cuid())
+  userId    String
+  companyId String
+  type      String // Enum as string for SQLite
+  subject   String?
+  body      String
+  status    String   @default("DRAFT")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
@@ -272,20 +278,20 @@ model OutreachDraft {
 }
 
 model JobApplication {
-  id          String    @id @default(cuid())
-  userId      String
-  companyId   String
-  position    String
-  status      String    @default("APPLIED")  // APPLIED, PHONE_SCREEN, TECHNICAL, ONSITE, OFFER, REJECTED, WITHDRAWN
-  appliedAt   DateTime  @default(now())
-  url         String?   // Link to job posting or application
-  source      String?   // CAREERS_PAGE, LINKEDIN, REFERRAL, COLD_OUTREACH
-  notes       String?
-  nextStepAt  DateTime?
-  nextStep    String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  archivedAt  DateTime?
+  id         String    @id @default(cuid())
+  userId     String
+  companyId  String
+  position   String
+  status     String    @default("APPLIED") // APPLIED, PHONE_SCREEN, TECHNICAL, ONSITE, OFFER, REJECTED, WITHDRAWN
+  appliedAt  DateTime  @default(now())
+  url        String? // Link to job posting or application
+  source     String? // CAREERS_PAGE, LINKEDIN, REFERRAL, COLD_OUTREACH
+  notes      String?
+  nextStepAt DateTime?
+  nextStep   String?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  archivedAt DateTime?
 
   user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
@@ -302,17 +308,17 @@ model JobApplication {
 // ============================================
 
 model Folder {
-  id          String    @id @default(cuid())
-  userId      String
-  name        String
-  color       String?   // Hex color for UI
-  icon        String?   // Icon name
-  order       Int       @default(0)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id        String   @id @default(cuid())
+  userId    String
+  name      String
+  color     String? // Hex color for UI
+  icon      String? // Icon name
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  industries  FavoriteIndustry[]
+  user       User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  industries FavoriteIndustry[]
 
   @@unique([userId, name])
   @@index([userId])
@@ -320,16 +326,16 @@ model Folder {
 }
 
 model FavoriteIndustry {
-  id          String    @id @default(cuid())
-  userId      String
-  industry    String    // Industry name (e.g., "Fintech", "Healthcare")
-  folderId    String?   // Optional folder assignment
-  order       Int       @default(0)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id        String   @id @default(cuid())
+  userId    String
+  industry  String // Industry name (e.g., "Fintech", "Healthcare")
+  folderId  String? // Optional folder assignment
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  folder      Folder?   @relation(fields: [folderId], references: [id], onDelete: SetNull)
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  folder Folder? @relation(fields: [folderId], references: [id], onDelete: SetNull)
 
   @@unique([userId, industry])
   @@index([userId])
@@ -343,7 +349,7 @@ model FavoriteIndustry {
 
 model ApiCredits {
   id           String   @id @default(cuid())
-  provider     String   @unique  // APOLLO, HUNTER, NEWSAPI, CLEARBIT
+  provider     String   @unique // APOLLO, HUNTER, NEWSAPI, CLEARBIT
   creditsUsed  Int      @default(0)
   creditsLimit Int
   resetDate    DateTime
@@ -375,9 +381,9 @@ model IngestionRun {
 model IngestionLog {
   id        String   @id @default(cuid())
   runId     String
-  level     String   // Enum as string for SQLite
+  level     String // Enum as string for SQLite
   message   String
-  details   String?  // JSON string for SQLite
+  details   String? // JSON string for SQLite
   timestamp DateTime @default(now())
 
   run IngestionRun @relation(fields: [runId], references: [id], onDelete: Cascade)
@@ -385,4 +391,121 @@ model IngestionLog {
   @@index([runId])
   @@index([level])
   @@index([timestamp])
+}
+
+// ============================================
+// PROSPECTS
+// ============================================
+
+model Prospect {
+  id        String @id @default(cuid())
+  userId    String
+  companyId String
+
+  // CRM Fields
+  status          String    @default("NEW") // NEW, CONTACTED, RESPONDED, QUALIFIED, DISQUALIFIED, CONVERTED
+  priority        String    @default("MEDIUM") // LOW, MEDIUM, HIGH
+  nextAction      String?
+  nextActionDate  DateTime?
+  lastContactedAt DateTime?
+  source          String    @default("AUTO_SIGNAL") // AUTO_SIGNAL, MANUAL, REFERRAL
+
+  // Signal Tracking
+  confidenceScore    Float     @default(0.0) // 0.0 - 1.0
+  timelinePrediction String? // "1_3_MONTHS", "3_6_MONTHS", "6_12_MONTHS"
+  signalCount        Int       @default(0)
+  lastSignalAt       DateTime?
+
+  // Timestamps
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  convertedAt DateTime?
+  archivedAt  DateTime?
+
+  user    User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  notes   ProspectNote[]
+  signals ProspectSignal[]
+
+  @@unique([userId, companyId])
+  @@index([userId])
+  @@index([companyId])
+  @@index([status])
+  @@index([priority])
+  @@index([confidenceScore])
+  @@index([nextActionDate])
+  @@index([createdAt])
+}
+
+model ProspectSignal {
+  id         String @id @default(cuid())
+  prospectId String
+  companyId  String
+
+  type        String // HIRING_SPIKE, NEWS_MENTION, HEADCOUNT_GROWTH, JOB_VELOCITY, FUNDING_PATTERN
+  strength    Float // 0.0 - 1.0
+  metadata    String? // JSON with signal details
+  description String?
+
+  detectedAt DateTime  @default(now())
+  expiresAt  DateTime?
+
+  prospect Prospect @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+  company  Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([prospectId])
+  @@index([companyId])
+  @@index([type])
+  @@index([detectedAt])
+  @@index([strength])
+}
+
+model ProspectNote {
+  id         String @id @default(cuid())
+  prospectId String
+  userId     String
+
+  content      String
+  type         String    @default("NOTE") // NOTE, REMINDER, CALL_LOG, EMAIL_LOG
+  reminderDate DateTime?
+  completed    Boolean   @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  prospect Prospect @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([prospectId])
+  @@index([userId])
+  @@index([type])
+  @@index([reminderDate])
+  @@index([completed])
+}
+
+model Recommendation {
+  id        String @id @default(cuid())
+  userId    String
+  companyId String
+
+  // Scoring & Matching
+  score        Float   @default(0.0) // 0.0 - 1.0 similarity score
+  matchReason  String // WATCHLIST_SIMILAR, POPULAR_TRENDING
+  matchFactors String? // JSON: { tagMatch: 0.8, locationMatch: 1.0, ... }
+
+  // Metadata
+  createdAt DateTime  @default(now())
+  expiresAt DateTime // 24-hour TTL
+  viewedAt  DateTime?
+  clickedAt DateTime?
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, companyId])
+  @@index([userId])
+  @@index([companyId])
+  @@index([score])
+  @@index([expiresAt])
+  @@index([matchReason])
 }

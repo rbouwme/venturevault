@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils'
 const navItems = [
   { title: 'Dashboard', href: '/dashboard', icon: '📊' },
   { title: 'Watchlist', href: '/dashboard/watchlist', icon: '⭐' },
+  { title: 'Prospects', href: '/dashboard/prospects', icon: '🎯' },
   { title: 'Saved Searches', href: '/dashboard/saved-searches', icon: '🔍' },
   { title: 'Outreach', href: '/dashboard/outreach', icon: '✉️' },
   { title: 'Settings', href: '/dashboard/settings', icon: '⚙️' },
@@ -59,8 +60,8 @@ export function MobileNav() {
               className={cn(
                 'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
                 pathname === item.href
-                  ? 'bg-blue-50 text-blue-700'
-                  : 'text-gray-700 hover:bg-gray-100'
+                  ? 'bg-primary/10 text-primary'
+                  : 'text-foreground hover:bg-accent hover:text-accent-foreground'
               )}
             >
               <span>{item.icon}</span>
@@ -71,7 +72,7 @@ export function MobileNav() {
           {isAdmin && (
             <>
               <div className="pt-4">
-                <p className="px-3 text-xs font-semibold uppercase text-gray-500">
+                <p className="px-3 text-xs font-semibold uppercase text-muted-foreground">
                   Admin
                 </p>
               </div>
@@ -83,8 +84,8 @@ export function MobileNav() {
                   className={cn(
                     'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
                     pathname === item.href
-                      ? 'bg-blue-50 text-blue-700'
-                      : 'text-gray-700 hover:bg-gray-100'
+                      ? 'bg-primary/10 text-primary'
+                      : 'text-foreground hover:bg-accent hover:text-accent-foreground'
                   )}
                 >
                   <span>{item.icon}</span>

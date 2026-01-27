@@ -78,6 +78,7 @@ export function FundingFeed({ filters }: FundingFeedProps) {
         const params = new URLSearchParams()
         if (filters.country) params.set('country', filters.country)
         if (filters.state) params.set('state', filters.state)
+        if (filters.metro) params.set('metro', filters.metro)
         if (filters.city) params.set('city', filters.city)
         if (filters.industry) params.set('industry', filters.industry)
         if (filters.roundType) params.set('roundType', filters.roundType)
@@ -114,7 +115,7 @@ export function FundingFeed({ filters }: FundingFeedProps) {
     return (
       <div className="bg-card rounded-lg border border-border p-8 text-center">
         <div className="text-4xl mb-4">❌</div>
-        <h3 className="text-lg font-semibold text-foreground">Error loading funding events</h3>
+        <h3 className="text-lg font-semibold text-foreground">Error loading startups</h3>
         <p className="mt-2 text-muted-foreground">{error}</p>
       </div>
     )
@@ -124,9 +125,9 @@ export function FundingFeed({ filters }: FundingFeedProps) {
     return (
       <div className="bg-card rounded-lg border border-border p-8 text-center">
         <div className="text-4xl mb-4">📭</div>
-        <h3 className="text-lg font-semibold text-foreground">No funding events found</h3>
+        <h3 className="text-lg font-semibold text-foreground">No startups found</h3>
         <p className="mt-2 text-muted-foreground">
-          Try adjusting your filters or check back later for new announcements.
+          Try adjusting your filters or check back later for new companies.
         </p>
       </div>
     )
@@ -136,7 +137,7 @@ export function FundingFeed({ filters }: FundingFeedProps) {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
-          Showing {data.events.length} of {data.totalCount} funding events
+          Showing {data.events.length} of {data.totalCount} startups
         </p>
       </div>
 

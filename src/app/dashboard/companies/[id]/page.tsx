@@ -34,6 +34,7 @@ export default async function CompanyPage({ params }: CompanyPageProps) {
           <KeyContacts
             people={company.people}
             companyId={company.id}
+            companyName={company.name}
             companyDomain={company.domain}
           />
           <OutreachHelper company={company} />

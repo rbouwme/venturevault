@@ -6,6 +6,7 @@ interface DashboardPageProps {
     country?: string
     state?: string
     city?: string
+    metro?: string
     industry?: string
     roundType?: string
     minAmount?: string
@@ -23,6 +24,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
     country: params.country,
     state: params.state,
     city: params.city,
+    metro: params.metro,
     industry: params.industry,
     roundType: params.roundType,
     minAmount: params.minAmount ? parseInt(params.minAmount) : undefined,

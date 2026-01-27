@@ -5,6 +5,7 @@ import { DashboardTabs } from './dashboard-tabs'
 import { FundingFilters } from './funding-filters'
 import { FundingFeed } from './funding-feed'
 import { IndustryBrowser } from './industry-browser'
+import { RecommendationCarousel } from './recommendation-carousel'
 import type { FundingFilters as Filters } from '@/types'
 
 interface DashboardContentProps {
@@ -22,6 +23,8 @@ export function DashboardContent({ filters }: DashboardContentProps) {
           Find recently funded startups or browse by industry
         </p>
       </div>
+
+      <RecommendationCarousel />
 
       <DashboardTabs activeTab={activeTab} onTabChange={setActiveTab} />
 

@@ -19,6 +19,7 @@ export function DashboardTabs({ activeTab, onTabChange }: DashboardTabsProps) {
               ? 'border-blue-500 text-blue-600 dark:border-blue-400 dark:text-blue-400'
               : 'border-transparent text-muted-foreground hover:border-border hover:text-foreground'
           )}
+          suppressHydrationWarning
         >
           Recent Funding
         </button>
@@ -30,6 +31,7 @@ export function DashboardTabs({ activeTab, onTabChange }: DashboardTabsProps) {
               ? 'border-blue-500 text-blue-600 dark:border-blue-400 dark:text-blue-400'
               : 'border-transparent text-muted-foreground hover:border-border hover:text-foreground'
           )}
+          suppressHydrationWarning
         >
           Browse by Industry
         </button>
