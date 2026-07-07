@@ -29,6 +29,7 @@ export async function getFundingEvents(filters: FundingFilters = {}): Promise<Fu
     state,
     city,
     metro,
+    headcount,
     industry,
     roundType,
     minAmount,
@@ -37,6 +38,7 @@ export async function getFundingEvents(filters: FundingFilters = {}): Promise<Fu
     sortBy = 'newest',
     page = 1,
     limit = 20,
+    search,
   } = filters
 
   const thirtyDaysAgo = new Date()
@@ -44,6 +46,7 @@ export async function getFundingEvents(filters: FundingFilters = {}): Promise<Fu
 
   const companyWhere: Prisma.CompanyWhereInput = {
     archivedAt: null,
+    ...(search && { name: { contains: search } }),
     ...(country && { country }),
     ...(state && { state }),
     ...(industry && { tags: { has: industry } }),
@@ -55,6 +58,17 @@ export async function getFundingEvents(filters: FundingFilters = {}): Promise<Fu
         },
       },
     }),
+  }
+
+  // Headcount filter: include matching range OR null headcount
+  if (headcount) {
+    const [minStr, maxStr] = headcount.split('-')
+    const min = parseInt(minStr)
+    const max = maxStr ? parseInt(maxStr) : undefined
+    companyWhere.OR = [
+      { headcount: null },
+      max ? { headcount: { gte: min, lte: max } } : { headcount: { gte: min } },
+    ]
   }
 
   // Apply metro area or plain city filter
@@ -115,11 +129,13 @@ export async function getFundingEventsCount(filters: FundingFilters = {}): Promi
     state,
     city,
     metro,
+    headcount,
     industry,
     roundType,
     minAmount,
     maxAmount,
     hiringNow,
+    search,
   } = filters
 
   const thirtyDaysAgo = new Date()
@@ -127,6 +143,7 @@ export async function getFundingEventsCount(filters: FundingFilters = {}): Promi
 
   const companyWhere: Prisma.CompanyWhereInput = {
     archivedAt: null,
+    ...(search && { name: { contains: search } }),
     ...(country && { country }),
     ...(state && { state }),
     ...(industry && { tags: { has: industry } }),
@@ -138,6 +155,16 @@ export async function getFundingEventsCount(filters: FundingFilters = {}): Promi
         },
       },
     }),
+  }
+
+  if (headcount) {
+    const [minStr, maxStr] = headcount.split('-')
+    const min = parseInt(minStr)
+    const max = maxStr ? parseInt(maxStr) : undefined
+    companyWhere.OR = [
+      { headcount: null },
+      max ? { headcount: { gte: min, lte: max } } : { headcount: { gte: min } },
+    ]
   }
 
   if (metro) {

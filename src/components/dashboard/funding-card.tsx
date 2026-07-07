@@ -2,6 +2,9 @@ import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { formatAmount, formatDate, formatRoundType } from '@/lib/utils'
+import { ProspectButton } from './prospect-button'
+import { ColdEmailButton } from './cold-email-button'
+import { EmailedBadge, type ColdEmailRecord } from './emailed-badge'
 
 interface FundingCardProps {
   event: {
@@ -30,6 +33,7 @@ interface FundingCardProps {
       ycBatch?: string | null
       _count?: {
         jobPostings?: number
+        people?: number
       }
     }
   }
@@ -55,7 +59,7 @@ function parseInvestors(investors: string | string[] | null): string[] {
   }
 }
 
-export function FundingCard({ event }: FundingCardProps) {
+export function FundingCard({ event, coldEmail }: FundingCardProps & { coldEmail?: ColdEmailRecord }) {
   const { company } = event
   const isHiring = company.isHiring || (company._count?.jobPostings ?? 0) > 0
   const tags = parseTags(company.tags)
@@ -63,26 +67,32 @@ export function FundingCard({ event }: FundingCardProps) {
   const isYCCompany = event.roundType?.startsWith('YC ')
 
   return (
-    <Card className="hover:shadow-md transition-shadow">
+    <Card className="hover:border-border/80 transition-colors">
       <CardHeader className="pb-2">
         <div className="flex items-start justify-between">
           <div className="space-y-1">
             <Link href={`/dashboard/companies/${company.id}`}>
-              <CardTitle className="text-lg hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+              <CardTitle className="text-base hover:text-primary transition-colors">
                 {company.name}
               </CardTitle>
             </Link>
+            {coldEmail && <EmailedBadge coldEmail={coldEmail} />}
             {company.domain && (
               <p className="text-sm text-muted-foreground">{company.domain}</p>
             )}
           </div>
           <div className="flex flex-col items-end gap-2">
-            <Badge variant={isYCCompany ? "default" : "secondary"} className={isYCCompany ? "bg-orange-500 dark:bg-orange-600" : ""}>
+            <Badge variant={isYCCompany ? "default" : "secondary"} className={isYCCompany ? "bg-orange-500 text-white dark:bg-orange-600" : ""}>
               {formatRoundType(event.roundType)}
             </Badge>
             {isHiring && (
-              <Badge className="bg-green-100 text-green-800 hover:bg-green-100 dark:bg-green-900 dark:text-green-100 dark:hover:bg-green-900">
+              <Badge variant="secondary" className="bg-emerald-50 text-emerald-700 hover:bg-emerald-50 dark:bg-emerald-950 dark:text-emerald-400 dark:hover:bg-emerald-950">
                 Hiring
+              </Badge>
+            )}
+            {(company._count?.people ?? 0) > 0 && (
+              <Badge variant="secondary" className="bg-primary/8 text-primary hover:bg-primary/8 dark:bg-primary/15 dark:text-primary dark:hover:bg-primary/15">
+                {company._count!.people} {company._count!.people === 1 ? 'contact' : 'contacts'}
               </Badge>
             )}
           </div>
@@ -138,18 +148,22 @@ export function FundingCard({ event }: FundingCardProps) {
             </div>
           )}
 
-          {event.sourceUrl && (
-            <div className="pt-2 border-t border-border">
+          <div className="pt-2 border-t border-border flex items-center justify-between">
+            {event.sourceUrl ? (
               <a
                 href={event.sourceUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 hover:underline"
+                className="text-sm text-primary hover:text-primary/80 hover:underline"
               >
                 {isYCCompany ? 'View on Y Combinator →' : 'View source article →'}
               </a>
+            ) : <span />}
+            <div className="flex items-center gap-1">
+              <ColdEmailButton companyId={company.id} companyName={company.name} />
+              <ProspectButton companyId={company.id} />
             </div>
-          )}
+          </div>
         </div>
       </CardContent>
     </Card>

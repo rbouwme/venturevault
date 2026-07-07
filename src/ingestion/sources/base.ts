@@ -169,7 +169,20 @@ export abstract class BaseSource {
       }
     }
 
-    if (/\b(toronto|vancouver|montreal|canada|canadian)\b/i.test(text)) {
+    const canadianCities: Array<{ pattern: RegExp; state: string; city: string }> = [
+      { pattern: /\b(toronto|north york|scarborough|mississauga|brampton|markham|vaughan|gta|ontario)\b/i, state: 'ON', city: 'Toronto' },
+      { pattern: /\b(vancouver|burnaby|surrey|richmond|north vancouver|bc|british columbia)\b/i, state: 'BC', city: 'Vancouver' },
+      { pattern: /\b(montr[eé]al|qu[eé]bec)\b/i, state: 'QC', city: 'Montreal' },
+      { pattern: /\b(calgary|edmonton|alberta)\b/i, state: 'AB', city: 'Calgary' },
+    ]
+
+    for (const { pattern, state, city } of canadianCities) {
+      if (pattern.test(text)) {
+        return { country: 'CA', state, city }
+      }
+    }
+
+    if (/\b(canada|canadian)\b/i.test(text)) {
       return { country: 'CA' }
     }
 

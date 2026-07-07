@@ -12,6 +12,7 @@ export async function GET(request: NextRequest) {
     state: searchParams.get('state') || undefined,
     city: searchParams.get('city') || undefined,
     metro: searchParams.get('metro') || undefined,
+    headcount: searchParams.get('headcount') || undefined,
     industry: searchParams.get('industry') || undefined,
     roundType: searchParams.get('roundType') || undefined,
     minAmount: searchParams.get('minAmount') ? parseInt(searchParams.get('minAmount')!) : undefined,
@@ -20,6 +21,7 @@ export async function GET(request: NextRequest) {
     sortBy: (searchParams.get('sortBy') as 'newest' | 'amount') || 'newest',
     page: searchParams.get('page') ? parseInt(searchParams.get('page')!) : 1,
     limit: searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : 20,
+    search: searchParams.get('search') || undefined,
   }
 
   try {
@@ -48,10 +50,25 @@ export async function GET(request: NextRequest) {
       dataSource: 'YC',
     }
 
+    if (filters.search) where.name = { contains: filters.search }
     if (filters.country) where.country = filters.country
     if (filters.state) where.state = filters.state
     if (filters.hiringNow) where.isHiring = true
     if (filters.industry) where.tags = { contains: filters.industry }
+
+    // Headcount filter: include companies with matching headcount OR null headcount
+    if (filters.headcount) {
+      const [minStr, maxStr] = filters.headcount.split('-')
+      const min = parseInt(minStr)
+      const max = maxStr ? parseInt(maxStr) : undefined
+      const headcountConditions: Record<string, unknown>[] = [{ headcount: null }]
+      if (max) {
+        headcountConditions.push({ headcount: { gte: min, lte: max } })
+      } else {
+        headcountConditions.push({ headcount: { gte: min } })
+      }
+      where.OR = headcountConditions
+    }
 
     // Metro area filter: matches by city names + state fallback
     if (filters.metro) {
@@ -76,6 +93,13 @@ export async function GET(request: NextRequest) {
           fundingEvents: {
             orderBy: { announcedAt: 'desc' },
             take: 1,
+          },
+          _count: {
+            select: {
+              people: {
+                where: { archivedAt: null },
+              },
+            },
           },
         },
       }),
@@ -107,6 +131,9 @@ export async function GET(request: NextRequest) {
         isHiring: company.isHiring,
         oneLiner: company.oneLiner,
         ycBatch: company.ycBatch,
+        _count: {
+          people: company._count.people,
+        },
       },
     }))
 

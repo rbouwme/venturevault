@@ -36,7 +36,7 @@ export function AlertNotificationEmail({
       <Head />
       <Body style={main}>
         <Container style={container}>
-          <Heading style={h1}>Startup Funding Tracker</Heading>
+          <Heading style={h1}>VentureVault</Heading>
           <Text style={text}>
             Your alert <strong>{alertName}</strong> found {matches.length} new
             funding event{matches.length > 1 ? 's' : ''}.
@@ -85,8 +85,7 @@ export function AlertNotificationEmail({
           </Text>
 
           <Text style={footerNote}>
-            You received this email because you have an active alert on Startup
-            Funding Tracker.
+            You received this email because you have an active alert on VentureVault.
           </Text>
         </Container>
       </Body>

@@ -37,6 +37,7 @@ model User {
   prospects          Prospect[]
   prospectNotes      ProspectNote[]
   recommendations    Recommendation[]
+  coldEmails         ColdEmail[]
 
   @@index([email])
   @@index([role])
@@ -122,6 +123,7 @@ model Company {
   prospects       Prospect[]
   prospectSignals ProspectSignal[]
   recommendations Recommendation[]
+  coldEmails      ColdEmail[]
 
   @@index([name])
   @@index([createdAt])
@@ -481,6 +483,32 @@ model ProspectNote {
   @@index([type])
   @@index([reminderDate])
   @@index([completed])
+}
+
+// ============================================
+// COLD EMAILS
+// ============================================
+
+model ColdEmail {
+  id        String @id @default(cuid())
+  userId    String
+  companyId String
+
+  emailAddress String  // Email address used
+  sentAt       DateTime @default(now())
+  notes        String?
+  followUpStatus String @default("SENT") // SENT, FOLLOW_UP_1, FOLLOW_UP_2, REPLIED, NO_RESPONSE, BOUNCED
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([companyId])
+  @@index([followUpStatus])
+  @@index([sentAt])
 }
 
 model Recommendation {

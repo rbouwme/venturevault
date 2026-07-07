@@ -43,7 +43,7 @@ export async function GET(request: Request) {
           {
             fundingEvents: {
               some: {
-                announcedDate: {
+                announcedAt: {
                   gte: oneYearAgo,
                 },
               },

@@ -6,6 +6,7 @@ export interface ProspectFilters {
   status?: string
   priority?: string
   signalType?: string
+  country?: string
 }
 
 export interface CreateProspectInput {
@@ -77,6 +78,11 @@ export async function getProspects(userId: string, filters?: ProspectFilters) {
   // Priority filter
   if (filters?.priority) {
     where.priority = filters.priority
+  }
+
+  // Country filter (region scoping)
+  if (filters?.country) {
+    where.company = { country: filters.country }
   }
 
   const prospects = await prisma.prospect.findMany({
@@ -319,6 +325,31 @@ export async function deleteProspectNote(userId: string, noteId: string) {
 
   return prisma.prospectNote.delete({
     where: { id: noteId },
+  })
+}
+
+/**
+ * Get upcoming reminders for a user (next 7 days)
+ */
+export async function getUpcomingReminders(userId: string) {
+  const now = new Date()
+  const sevenDaysFromNow = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+
+  return prisma.prospectNote.findMany({
+    where: {
+      userId,
+      type: 'REMINDER',
+      completed: false,
+      reminderDate: { gte: now, lte: sevenDaysFromNow },
+    },
+    include: {
+      prospect: {
+        include: {
+          company: { select: { id: true, name: true } },
+        },
+      },
+    },
+    orderBy: { reminderDate: 'asc' },
   })
 }
 

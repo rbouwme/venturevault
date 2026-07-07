@@ -1,12 +1,15 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
 import type { CompanyWithRelations } from '@/types'
+import { ColdEmailButton } from '@/components/dashboard/cold-email-button'
+import { ProspectButton } from '@/components/dashboard/prospect-button'
+import { EmailedBadge, type ColdEmailRecord } from '@/components/dashboard/emailed-badge'
 
 function parseTags(tags: string | string[] | null): string[] {
   if (!tags) return []
@@ -26,6 +29,25 @@ export function CompanyHeader({ company }: CompanyHeaderProps) {
   const { data: session } = useSession()
   const [isWatchlisted, setIsWatchlisted] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [coldEmail, setColdEmail] = useState<ColdEmailRecord | null>(null)
+
+  useEffect(() => {
+    async function fetchColdEmail() {
+      try {
+        const res = await fetch(`/api/cold-emails?companyId=${company.id}`)
+        if (res.ok) {
+          const emails = await res.json()
+          if (emails.length > 0) {
+            const e = emails[0]
+            setColdEmail({ id: e.id, emailAddress: e.emailAddress, sentAt: e.sentAt, followUpStatus: e.followUpStatus, notes: e.notes })
+          }
+        }
+      } catch {
+        // silently fail
+      }
+    }
+    fetchColdEmail()
+  }, [company.id])
 
   const handleWatchlist = async () => {
     if (!session?.user) return
@@ -58,13 +80,14 @@ export function CompanyHeader({ company }: CompanyHeaderProps) {
     <div className="bg-card rounded-lg border border-border p-6">
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div className="space-y-2">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
             <h1 className="text-2xl font-bold text-foreground">{company.name}</h1>
             {isHiring && (
               <Badge className="bg-green-100 text-green-800 hover:bg-green-100 dark:bg-green-900 dark:text-green-100 dark:hover:bg-green-900">
                 Hiring
               </Badge>
             )}
+            {coldEmail && <EmailedBadge coldEmail={coldEmail} />}
           </div>
 
           {company.domain && (
@@ -104,6 +127,11 @@ export function CompanyHeader({ company }: CompanyHeaderProps) {
             {isWatchlisted ? '⭐ Watchlisted' : '☆ Add to Watchlist'}
           </Button>
 
+          <div className="flex items-center gap-2">
+            <ColdEmailButton companyId={company.id} companyName={company.name} />
+            <ProspectButton companyId={company.id} />
+          </div>
+
           {company.linkedinUrl && (
             <a
               href={company.linkedinUrl}
@@ -128,12 +156,16 @@ export function CompanyHeader({ company }: CompanyHeaderProps) {
               <>
                 {' - '}
                 <span className="font-medium text-foreground">
-                  ${(Number(latestFunding.amountCents) / 100).toLocaleString()}
+                  ${(Number(latestFunding.amountCents) / 100).toLocaleString('en-US')}
                 </span>
               </>
             )}
             {' on '}
-            {new Date(latestFunding.announcedAt).toLocaleDateString()}
+            {new Date(latestFunding.announcedAt).toLocaleDateString('en-US', {
+              month: 'short',
+              day: 'numeric',
+              year: 'numeric',
+            })}
           </p>
         </div>
       )}

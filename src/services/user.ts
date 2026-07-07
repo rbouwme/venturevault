@@ -1,9 +1,12 @@
 import { prisma } from '@/lib/prisma'
 import type { OutreachStatus, OutreachType } from '@prisma/client'
 
-export async function getWatchlist(userId: string) {
+export async function getWatchlist(userId: string, country?: string) {
   return prisma.watchlist.findMany({
-    where: { userId },
+    where: {
+      userId,
+      ...(country ? { company: { country } } : {}),
+    },
     orderBy: { createdAt: 'desc' },
     include: {
       company: {
@@ -60,10 +63,20 @@ export async function isCompanyWatchlisted(userId: string, companyId: string) {
   return !!item
 }
 
-export async function getSavedSearches(userId: string) {
-  return prisma.savedSearch.findMany({
+export async function getSavedSearches(userId: string, country?: string) {
+  const all = await prisma.savedSearch.findMany({
     where: { userId },
     orderBy: { createdAt: 'desc' },
+  })
+  if (!country) return all
+  // Filter to saved searches that have matching country or no country set
+  return all.filter((s) => {
+    try {
+      const f = JSON.parse(s.filters as string)
+      return !f.country || f.country === country
+    } catch {
+      return true
+    }
   })
 }
 

@@ -24,27 +24,27 @@ export function Header() {
     .slice(0, 2) || 'U'
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="flex h-14 items-center px-4 md:px-6">
-        <Link href="/dashboard" className="flex items-center space-x-2">
-          <span className="font-bold text-lg">Startup Funding Tracker</span>
+    <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="flex h-12 items-center px-4 md:px-5">
+        <Link href="/dashboard" className="flex items-center">
+          <span className="font-semibold text-[15px] tracking-tight text-foreground">VentureVault</span>
         </Link>
 
-        <div className="ml-auto flex items-center space-x-2">
+        <div className="ml-auto flex items-center gap-1">
           <ThemeToggle />
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                <Avatar className="h-8 w-8">
-                  <AvatarFallback className="bg-blue-600 text-white text-xs">
+              <Button variant="ghost" className="relative h-7 w-7 rounded-full p-0">
+                <Avatar className="h-7 w-7">
+                  <AvatarFallback className="bg-primary text-primary-foreground text-[11px] font-semibold">
                     {initials}
                   </AvatarFallback>
                 </Avatar>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56" align="end" forceMount>
-              <div className="flex flex-col space-y-1 p-2">
+            <DropdownMenuContent className="w-52" align="end" forceMount>
+              <div className="flex flex-col gap-0.5 px-2 py-1.5">
                 <p className="text-sm font-medium leading-none">
                   {session?.user?.name}
                 </p>
@@ -63,7 +63,7 @@ export function Header() {
               )}
               <DropdownMenuSeparator />
               <DropdownMenuItem
-                className="cursor-pointer text-red-600 focus:text-red-600"
+                className="cursor-pointer text-muted-foreground"
                 onClick={() => signOut({ callbackUrl: '/' })}
               >
                 Sign out

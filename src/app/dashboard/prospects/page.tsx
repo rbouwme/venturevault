@@ -1,28 +1,89 @@
 import { redirect } from 'next/navigation'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { getProspects, getProspectStats } from '@/services/prospects'
+import { getProspects, getProspectStats, getUpcomingReminders } from '@/services/prospects'
+import { ProspectCard } from '@/components/prospects/prospect-card'
+import { ProspectKanban } from '@/components/prospects/prospect-kanban'
+import { ProspectViewToggle } from '@/components/prospects/prospect-view-toggle'
 
-export default async function ProspectsPage() {
+export default async function ProspectsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ country?: string; view?: string }>
+}) {
   const session = await getServerSession(authOptions)
+  if (!session?.user?.id) redirect('/auth/signin')
 
-  if (!session?.user?.id) {
-    redirect('/auth/signin')
-  }
+  const { country, view } = await searchParams
+  const isKanban = view === 'kanban'
 
-  const [prospects, stats] = await Promise.all([
-    getProspects(session.user.id),
+  const [prospects, stats, reminders] = await Promise.all([
+    getProspects(session.user.id, country ? { country } : undefined),
     getProspectStats(session.user.id),
+    getUpcomingReminders(session.user.id),
   ])
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Prospects</h1>
-        <p className="text-muted-foreground">
-          Companies likely to announce funding soon based on hiring signals and growth indicators
-        </p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Prospects</h1>
+          <p className="text-muted-foreground">
+            Companies likely to announce funding soon based on hiring signals and growth indicators
+          </p>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          {prospects.length > 0 && (
+            <a
+              href="/api/export/prospects"
+              download
+              className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-md border border-border bg-card text-foreground hover:bg-accent transition-colors"
+            >
+              ↓ Export CSV
+            </a>
+          )}
+          <ProspectViewToggle currentView={isKanban ? 'kanban' : 'list'} />
+        </div>
       </div>
+
+      {/* Upcoming Reminders */}
+      {reminders.length > 0 && (
+        <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
+          <h2 className="text-sm font-semibold text-amber-800 dark:text-amber-300 mb-3">
+            Upcoming Reminders ({reminders.length})
+          </h2>
+          <div className="space-y-2">
+            {reminders.map((reminder) => {
+              const date = new Date(reminder.reminderDate!)
+              const daysUntil = Math.ceil((date.getTime() - Date.now()) / 86_400_000)
+              const dueLabel =
+                daysUntil === 0 ? 'Today' : daysUntil === 1 ? 'Tomorrow' : `In ${daysUntil} days`
+              return (
+                <div key={reminder.id} className="flex items-start justify-between gap-3 text-sm">
+                  <div className="flex-1 min-w-0">
+                    <span className="font-medium text-foreground">
+                      {reminder.prospect.company.name}
+                    </span>
+                    <span className="text-muted-foreground ml-2">— {reminder.content}</span>
+                  </div>
+                  <span
+                    className={`shrink-0 text-xs font-medium px-2 py-0.5 rounded-full ${
+                      daysUntil === 0
+                        ? 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300'
+                        : daysUntil <= 2
+                          ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'
+                          : 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300'
+                    }`}
+                  >
+                    {dueLabel} ·{' '}
+                    {date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                  </span>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -46,13 +107,11 @@ export default async function ProspectsPage() {
         </div>
       </div>
 
-      {/* Prospects List */}
+      {/* Prospects View */}
       {prospects.length === 0 ? (
         <div className="bg-card border border-border rounded-lg p-12 text-center">
           <div className="text-5xl mb-4">🎯</div>
-          <h3 className="text-lg font-semibold text-foreground mb-2">
-            No prospects yet
-          </h3>
+          <h3 className="text-lg font-semibold text-foreground mb-2">No prospects yet</h3>
           <p className="text-muted-foreground mb-6">
             Prospects are automatically detected based on hiring spikes and growth signals.
             <br />
@@ -60,70 +119,15 @@ export default async function ProspectsPage() {
           </p>
           <p className="text-sm text-muted-foreground">
             You can also manually add companies to track by clicking on any company and selecting
-            "Add to Prospects"
+            &quot;Add to Prospects&quot;
           </p>
         </div>
+      ) : isKanban ? (
+        <ProspectKanban prospects={JSON.parse(JSON.stringify(prospects))} />
       ) : (
         <div className="bg-card border border-border rounded-lg divide-y divide-border">
           {prospects.map((prospect) => (
-            <div
-              key={prospect.id}
-              className="p-4 hover:bg-accent/50 transition-colors"
-            >
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3">
-                    <h3 className="font-semibold text-foreground">
-                      {prospect.company.name}
-                    </h3>
-                    <span
-                      className={`px-2 py-1 text-xs font-medium rounded ${
-                        prospect.confidenceScore >= 0.7
-                          ? 'bg-green-100 text-green-800'
-                          : prospect.confidenceScore >= 0.5
-                          ? 'bg-yellow-100 text-yellow-800'
-                          : 'bg-gray-100 text-gray-800'
-                      }`}
-                    >
-                      {(prospect.confidenceScore * 100).toFixed(0)}% confident
-                    </span>
-                    {prospect.timelinePrediction && (
-                      <span className="px-2 py-1 text-xs font-medium rounded bg-blue-100 text-blue-800">
-                        {prospect.timelinePrediction.replace(/_/g, '-').toLowerCase()}
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {prospect.company.description || prospect.company.domain}
-                  </p>
-                  <div className="flex gap-2 mt-2">
-                    {prospect.signals.slice(0, 3).map((signal) => (
-                      <span
-                        key={signal.id}
-                        className="text-xs px-2 py-1 bg-muted rounded"
-                        title={signal.description || undefined}
-                      >
-                        {signal.type === 'HIRING_SPIKE' && '📈'}
-                        {signal.type === 'NEWS_MENTION' && '📰'}
-                        {signal.type === 'HEADCOUNT_GROWTH' && '👥'}
-                        {signal.type === 'JOB_VELOCITY' && '⚡'}
-                        {signal.type === 'FUNDING_PATTERN' && '💰'}
-                        {' '}
-                        {signal.type.replace(/_/g, ' ').toLowerCase()}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <span className="px-2 py-1 text-xs font-medium rounded bg-muted text-foreground">
-                    {prospect.status}
-                  </span>
-                  <span className="px-2 py-1 text-xs font-medium rounded bg-muted text-foreground">
-                    {prospect.priority}
-                  </span>
-                </div>
-              </div>
-            </div>
+            <ProspectCard key={prospect.id} prospect={prospect} />
           ))}
         </div>
       )}

@@ -16,8 +16,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Startup Funding Tracker",
-  description: "Track newly funded startups in North America with hiring signals and outreach tools",
+  title: "VentureVault",
+  description: "Find recently funded startups to reach out to. Discover hiring signals, contacts, and generate personalized outreach.",
 };
 
 export default function RootLayout({

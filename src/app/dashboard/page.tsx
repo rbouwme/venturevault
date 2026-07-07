@@ -1,39 +1,30 @@
-import { DashboardContent } from '@/components/dashboard/dashboard-content'
-import type { FundingFilters as Filters } from '@/types'
+'use client'
 
-interface DashboardPageProps {
-  searchParams: Promise<{
-    country?: string
-    state?: string
-    city?: string
-    metro?: string
-    industry?: string
-    roundType?: string
-    minAmount?: string
-    maxAmount?: string
-    hiringNow?: string
-    sortBy?: string
-    page?: string
-  }>
-}
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { REGION_PREF_KEY, getRegionFeedUrl } from '@/lib/regions'
+import type { RegionId } from '@/lib/regions'
 
-export default async function DashboardPage({ searchParams }: DashboardPageProps) {
-  const params = await searchParams
+export default function DashboardPage() {
+  const router = useRouter()
 
-  const filters: Filters = {
-    country: params.country,
-    state: params.state,
-    city: params.city,
-    metro: params.metro,
-    industry: params.industry,
-    roundType: params.roundType,
-    minAmount: params.minAmount ? parseInt(params.minAmount) : undefined,
-    maxAmount: params.maxAmount ? parseInt(params.maxAmount) : undefined,
-    hiringNow: params.hiringNow === 'true',
-    sortBy: (params.sortBy as 'newest' | 'amount') || 'newest',
-    page: params.page ? parseInt(params.page) : 1,
-    limit: 20,
-  }
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(REGION_PREF_KEY)
+      if (saved) {
+        const { region, city } = JSON.parse(saved) as { region: RegionId; city: string }
+        router.replace(getRegionFeedUrl(region, city))
+      } else {
+        router.replace('/dashboard/select')
+      }
+    } catch {
+      router.replace('/dashboard/select')
+    }
+  }, [router])
 
-  return <DashboardContent filters={filters} />
+  return (
+    <div className="flex items-center justify-center h-64">
+      <div className="text-sm text-muted-foreground">Loading...</div>
+    </div>
+  )
 }

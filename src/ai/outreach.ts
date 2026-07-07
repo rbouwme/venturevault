@@ -145,7 +145,7 @@ async function buildCompanyContext(companyId: string): Promise<CompanyContext> {
           amount: latestFunding.amountCents
             ? `$${(Number(latestFunding.amountCents) / 100).toLocaleString()}`
             : undefined,
-          investors: latestFunding.investors || [],
+          investors: latestFunding.investors ? (JSON.parse(latestFunding.investors) as string[]) : [],
           date: latestFunding.announcedAt.toLocaleDateString(),
         }
       : undefined,
@@ -201,4 +201,105 @@ function parseResponse(
   }
 
   return { body: content.trim() }
+}
+
+export interface SequenceEmail {
+  step: number
+  dayOffset: number
+  label: string
+  subject: string
+  body: string
+}
+
+interface SequenceOptions {
+  senderName?: string
+  senderRole?: string
+}
+
+const SEQUENCE_SYSTEM = `You are an expert at writing professional cold outreach sequences for job seekers targeting recently-funded startups.
+Your messages are concise, personalized, and reference specific company signals. Never use filler phrases like "I hope this finds you well."
+The tone is confident but not pushy. Each message in the sequence builds on the previous one without repeating it verbatim.`
+
+export async function generateSequence(
+  userId: string,
+  companyId: string,
+  options: SequenceOptions = {}
+): Promise<SequenceEmail[]> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { openaiKeyEncrypted: true, name: true },
+  })
+
+  if (!user?.openaiKeyEncrypted) {
+    throw new Error('OpenAI API key not configured. Please add it in Settings.')
+  }
+
+  const apiKey = decrypt(user.openaiKeyEncrypted)
+  const openai = new OpenAI({ apiKey })
+  const context = await buildCompanyContext(companyId)
+
+  const senderName = options.senderName || user.name || 'Your Name'
+  const senderRole = options.senderRole || 'candidate'
+
+  const prompt = `Generate a 3-email cold outreach sequence for a ${senderRole} named ${senderName} reaching out to ${context.name}.
+
+Company context:
+- Recent funding: ${context.latestFunding ? `${context.latestFunding.roundType}${context.latestFunding.amount ? ` (${context.latestFunding.amount})` : ''} on ${context.latestFunding.date}` : 'N/A'}
+${context.latestFunding?.investors?.length ? `- Investors: ${context.latestFunding.investors.join(', ')}` : ''}
+- Currently hiring: ${context.isHiring ? `Yes (${context.jobCount} open roles)` : 'No'}
+${context.contacts.length ? `- Key contact(s): ${context.contacts.map((c) => `${c.name}${c.role ? ` (${c.role})` : ''}`).join(', ')}` : ''}
+
+Output exactly this format with no extra commentary:
+
+EMAIL 1 (Day 0) - Initial Outreach
+Subject: [subject line]
+[email body — under 150 words]
+
+---
+
+EMAIL 2 (Day 4) - Follow-up
+Subject: [subject line]
+[email body — under 80 words, reference email 1, stay concise]
+
+---
+
+EMAIL 3 (Day 10) - Final
+Subject: [subject line]
+[email body — under 60 words, low-pressure close, leave the door open]`
+
+  const response = await openai.chat.completions.create({
+    model: 'gpt-4o',
+    messages: [
+      { role: 'system', content: SEQUENCE_SYSTEM },
+      { role: 'user', content: prompt },
+    ],
+    temperature: 0.7,
+    max_tokens: 1200,
+  })
+
+  const raw = response.choices[0]?.message?.content || ''
+  return parseSequence(raw)
+}
+
+function parseSequence(raw: string): SequenceEmail[] {
+  const blocks = raw.split(/---+/).map((b) => b.trim()).filter(Boolean)
+  const DAYS = [0, 4, 10]
+  const LABELS = ['Initial Outreach', 'Follow-up', 'Final Touch']
+
+  return blocks.map((block, i) => {
+    const subjectMatch = block.match(/^Subject:\s*(.+)$/m)
+    const subject = subjectMatch ? subjectMatch[1].trim() : `Follow-up ${i + 1}`
+    const body = block
+      .replace(/^EMAIL \d.*$/m, '')
+      .replace(/^Subject:\s*.+$/m, '')
+      .trim()
+
+    return {
+      step: i + 1,
+      dayOffset: DAYS[i] ?? i * 5,
+      label: LABELS[i] ?? `Step ${i + 1}`,
+      subject,
+      body,
+    }
+  })
 }

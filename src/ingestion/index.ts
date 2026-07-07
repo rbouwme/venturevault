@@ -157,7 +157,7 @@ async function processEvent(
         country: event.country,
         state: event.state,
         city: event.city,
-        tags: event.tags,
+        tags: event.tags?.length ? JSON.stringify(event.tags) : null,
       },
     })
 
@@ -190,7 +190,8 @@ async function processEvent(
       roundType: event.roundType,
       amountCents: event.amountCents,
       announcedAt: event.announcedAt,
-      investors: event.investors,
+      investors: event.investors?.length ? JSON.stringify(event.investors) : null,
+      leadInvestor: event.investors?.[0] ?? null,
       summary: event.summary,
       sourceUrl: event.sourceUrl,
       sourceName: event.sourceName,

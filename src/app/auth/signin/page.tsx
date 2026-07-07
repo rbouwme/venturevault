@@ -50,18 +50,17 @@ function SignInForm() {
   return (
     <>
       {errorMessage && (
-        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-md text-sm">
+        <div className="bg-destructive/8 border border-destructive/20 text-destructive px-4 py-3 rounded-md text-sm">
           {errorMessage}
         </div>
       )}
 
-      {/* LinkedIn Sign In Button */}
       <div className="mt-8">
         <button
           type="button"
           onClick={handleLinkedInSignIn}
           disabled={isLoading}
-          className="w-full flex items-center justify-center gap-3 py-2.5 px-4 border border-border rounded-md shadow-sm bg-card text-sm font-medium text-foreground hover:bg-accent hover:text-accent-foreground focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full flex items-center justify-center gap-3 py-2.5 px-4 border border-border rounded-md bg-card text-sm font-medium text-foreground hover:bg-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
             <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.32 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.79M6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z"/>
@@ -72,17 +71,17 @@ function SignInForm() {
 
       <div className="relative my-6">
         <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-border"></div>
+          <div className="w-full border-t border-border" />
         </div>
         <div className="relative flex justify-center text-sm">
           <span className="px-2 bg-background text-muted-foreground">Or continue with email</span>
         </div>
       </div>
 
-      <form className="space-y-6" onSubmit={handleSubmit}>
+      <form className="space-y-5" onSubmit={handleSubmit}>
         <div className="space-y-4">
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-foreground">
+            <label htmlFor="email" className="block text-sm font-medium text-foreground mb-1">
               Email address
             </label>
             <input
@@ -93,13 +92,13 @@ function SignInForm() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="mt-1 appearance-none relative block w-full px-3 py-2 border border-input rounded-md placeholder-muted-foreground text-foreground bg-background focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              className="w-full px-3 py-2 border border-input rounded-md text-sm placeholder:text-muted-foreground text-foreground bg-background focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring transition-colors"
               placeholder="you@example.com"
             />
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-foreground">
+            <label htmlFor="password" className="block text-sm font-medium text-foreground mb-1">
               Password
             </label>
             <input
@@ -110,28 +109,23 @@ function SignInForm() {
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="mt-1 appearance-none relative block w-full px-3 py-2 border border-input rounded-md placeholder-muted-foreground text-foreground bg-background focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              className="w-full px-3 py-2 border border-input rounded-md text-sm placeholder:text-muted-foreground text-foreground bg-background focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring transition-colors"
               placeholder="Enter your password"
             />
           </div>
         </div>
 
-        <div>
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isLoading ? 'Signing in...' : 'Sign in with Email'}
-          </button>
-        </div>
+        <button
+          type="submit"
+          disabled={isLoading}
+          className="w-full flex justify-center py-2.5 px-4 border border-transparent text-sm font-medium rounded-md text-primary-foreground bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        >
+          {isLoading ? 'Signing in...' : 'Sign in with Email'}
+        </button>
 
         <div className="text-center text-sm">
           <span className="text-muted-foreground">Don&apos;t have an account? </span>
-          <Link
-            href="/auth/signup"
-            className="font-medium text-blue-600 hover:text-blue-500"
-          >
+          <Link href="/auth/signup" className="font-medium text-primary hover:text-primary/80">
             Sign up
           </Link>
         </div>
@@ -143,21 +137,21 @@ function SignInForm() {
 export default function SignInPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
+      <div className="max-w-md w-full space-y-6">
         <div>
-          <h1 className="text-center text-3xl font-bold text-foreground">
-            Startup Funding Tracker
+          <h1 className="text-center text-2xl font-bold tracking-tight text-foreground">
+            VentureVault
           </h1>
-          <h2 className="mt-6 text-center text-2xl font-semibold text-foreground">
+          <h2 className="mt-3 text-center text-lg font-medium text-muted-foreground">
             Sign in to your account
           </h2>
         </div>
 
         <Suspense fallback={
           <div className="animate-pulse space-y-4">
-            <div className="h-10 bg-muted rounded"></div>
-            <div className="h-10 bg-muted rounded"></div>
-            <div className="h-10 bg-muted rounded"></div>
+            <div className="h-10 bg-muted rounded-md" />
+            <div className="h-10 bg-muted rounded-md" />
+            <div className="h-10 bg-muted rounded-md" />
           </div>
         }>
           <SignInForm />

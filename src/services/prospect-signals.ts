@@ -243,11 +243,11 @@ export async function detectSignals(companyId: string): Promise<Signal[]> {
  */
 export function calculateFundingLikelihood(signals: Signal[]): number {
   const weights: Record<SignalType, number> = {
-    HIRING_SPIKE: 0.35,
-    NEWS_MENTION: 0.2,
-    HEADCOUNT_GROWTH: 0.2,
-    FUNDING_PATTERN: 0.15,
-    JOB_VELOCITY: 0.1,
+    FUNDING_PATTERN: 0.40,
+    HIRING_SPIKE: 0.25,
+    HEADCOUNT_GROWTH: 0.15,
+    JOB_VELOCITY: 0.10,
+    NEWS_MENTION: 0.10,
   }
 
   let score = 0.0
@@ -256,6 +256,15 @@ export function calculateFundingLikelihood(signals: Signal[]): number {
     const weight = weights[signal.type] || 0
     score += signal.strength * weight
   })
+
+  // Normalize: scale score relative to the max possible from detected signal types
+  // This prevents low scores when only some signal types have data available
+  if (signals.length > 0) {
+    const activeWeightSum = signals.reduce((sum, s) => sum + (weights[s.type] || 0), 0)
+    if (activeWeightSum > 0 && activeWeightSum < 1.0) {
+      score = score / activeWeightSum
+    }
+  }
 
   return Math.min(score, 1.0)
 }

@@ -80,19 +80,19 @@ export function RecommendationCard({
     matchReason === 'POPULAR_TRENDING' ? 'Trending' : 'Similar Match'
   const matchBadgeColor =
     matchReason === 'POPULAR_TRENDING'
-      ? 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-100'
-      : 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100'
+      ? 'bg-violet-50 text-violet-700 dark:bg-violet-950 dark:text-violet-400'
+      : 'bg-primary/8 text-primary dark:bg-primary/15 dark:text-primary'
 
   const confidenceBadge =
     score >= 0.7
-      ? { text: 'High Match', color: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100' }
+      ? { text: 'High Match', color: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400' }
       : score >= 0.5
-      ? { text: 'Good Match', color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100' }
-      : { text: 'Fair Match', color: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100' }
+      ? { text: 'Good Match', color: 'bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-400' }
+      : { text: 'Fair Match', color: 'bg-secondary text-muted-foreground' }
 
   return (
     <Link href={`/dashboard/companies/${company.id}`} onClick={handleCardClick}>
-      <Card className="w-[280px] flex-shrink-0 hover:shadow-lg transition-shadow cursor-pointer h-full">
+      <Card className="w-[280px] flex-shrink-0 hover:border-border/80 transition-colors cursor-pointer h-full">
         <CardHeader className="pb-3">
           <div className="flex items-start gap-3">
             <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
@@ -130,7 +130,7 @@ export function RecommendationCard({
               </Badge>
             )}
             {company.isHiring && (
-              <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100" variant="secondary">
+              <Badge variant="secondary" className="bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400">
                 Hiring
               </Badge>
             )}

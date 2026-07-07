@@ -85,45 +85,101 @@ function scrapeContactsFromHtml(html: string): ScrapedContact[] {
   const contacts: ScrapedContact[] = []
   const seen = new Set<string>()
 
-  // Strategy 1: Look for common team member structures
-  // Try to find team member cards/sections
-  $('[class*="team"], [class*="member"], [class*="person"], [class*="employee"], [class*="leader"]').each((_, elem) => {
+  function addContact(name: string, title?: string, email?: string) {
+    if (!name || name.length <= 2 || name.length >= 50) return
+    if (!looksLikePersonName(name)) return
+    const key = name.toLowerCase()
+    if (seen.has(key)) return
+    seen.add(key)
+    contacts.push({
+      name,
+      title: title || undefined,
+      email: email || undefined,
+      role: title ? (isExecutiveRole(title) ? 'executive' : undefined) : undefined,
+    })
+  }
+
+  // Strategy 1: Find heading elements (h2-h4) that look like person names
+  // Then check sibling elements for title and email
+  $('h2, h3, h4').each((_, elem) => {
+    const name = $(elem).text().trim()
+    if (!looksLikePersonName(name)) return
+
+    // Check sibling elements for title and email
+    let title = ''
+    let email: string | null = null
+    $(elem).siblings('div, p, span').each((_, sib) => {
+      const text = $(sib).text().trim()
+      if (!title && text.length > 2 && text.length < 60) {
+        // Check if it looks like a title/role
+        if (EXECUTIVE_KEYWORDS.some(kw => text.toLowerCase().includes(kw)) ||
+            text.match(/^(Director|Manager|Lead|Engineer|Designer|Analyst|Associate|Partner|Advisor)/i)) {
+          title = text
+        }
+      }
+      if (!email) {
+        email = extractEmail(text)
+      }
+    })
+
+    addContact(name, title, email || undefined)
+  })
+
+  // Strategy 2: Look for common team member card structures
+  $('[class*="team"], [class*="member"], [class*="person"], [class*="employee"], [class*="leader"], [class*="staff"], [class*="bio"]').each((_, elem) => {
     const $elem = $(elem)
 
-    // Extract name (usually in h2, h3, or with class containing "name")
+    // Skip large containers - look for individual member cards
+    // If the element contains multiple h2/h3/h4, it's a container, not a card
+    const headings = $elem.find('h2, h3, h4')
+    if (headings.length > 1) {
+      // Process each heading individually within this container
+      headings.each((_, heading) => {
+        const name = $(heading).text().trim()
+        if (!looksLikePersonName(name)) return
+
+        // Look at parent of heading for nearby title/email
+        const parent = $(heading).parent()
+        let title = ''
+        let email: string | null = null
+        parent.find('div, p, span').each((_, child) => {
+          const text = $(child).text().trim()
+          if (text === name) return // skip the name itself
+          if (!title && text.length > 2 && text.length < 60) {
+            if (EXECUTIVE_KEYWORDS.some(kw => text.toLowerCase().includes(kw)) ||
+                text.match(/^(Director|Manager|Lead|Engineer|Designer|Analyst|Associate|Partner|Advisor)/i)) {
+              title = text
+            }
+          }
+          if (!email) {
+            email = extractEmail(text)
+          }
+        })
+
+        addContact(name, title, email || undefined)
+      })
+      return
+    }
+
+    // Single-card element
     let name = $elem.find('h2, h3, h4, [class*="name"]').first().text().trim()
     if (!name) {
       name = $elem.find('strong, b').first().text().trim()
     }
 
-    // Extract title/role
     let title = $elem.find('[class*="title"], [class*="role"], [class*="position"]').first().text().trim()
     if (!title) {
-      // Try to find it in p tags or spans
-      title = $elem.find('p, span').filter((_, el) => {
+      title = $elem.find('p, span, div').filter((_, el) => {
         const text = $(el).text().toLowerCase()
         return EXECUTIVE_KEYWORDS.some(kw => text.includes(kw))
       }).first().text().trim()
     }
 
-    // Extract email
     const email = extractEmail($elem.text())
-
-    if (name && name.length > 2 && name.length < 50) {
-      const key = name.toLowerCase()
-      if (!seen.has(key)) {
-        seen.add(key)
-        contacts.push({
-          name,
-          title: title || undefined,
-          email: email || undefined,
-          role: title ? (isExecutiveRole(title) ? 'executive' : undefined) : undefined,
-        })
-      }
-    }
+    addContact(name, title, email || undefined)
   })
 
-  // Strategy 2: Look for schema.org structured data
+  // Strategy 3: Look for schema.org structured data
   $('script[type="application/ld+json"]').each((_, elem) => {
     try {
       const jsonData = JSON.parse($(elem).html() || '{}')
@@ -131,15 +187,7 @@ function scrapeContactsFromHtml(html: string): ScrapedContact[] {
         const people = Array.isArray(jsonData) ? jsonData : [jsonData]
         people.forEach((person: any) => {
           if (person['@type'] === 'Person' && person.name) {
-            const key = person.name.toLowerCase()
-            if (!seen.has(key)) {
-              seen.add(key)
-              contacts.push({
-                name: person.name,
-                title: person.jobTitle || undefined,
-                email: person.email || undefined,
-              })
-            }
+            addContact(person.name, person.jobTitle, person.email)
           }
         })
       }
@@ -276,6 +324,28 @@ export function generateEmailPatterns(name: string, domain: string): Array<{ ema
   return patterns
 }
 
+// Common page section headings that should not be mistaken for names
+const NON_NAME_PHRASES = [
+  'about us', 'our team', 'our story', 'who we are', 'meet the team',
+  'leadership team', 'executive team', 'management team', 'our leadership',
+  'contact us', 'get in touch', 'learn more', 'read more', 'view all',
+  'our mission', 'our vision', 'our values', 'company info', 'more info',
+]
+
+// Check if text looks like a person name (2-4 capitalized words)
+function looksLikePersonName(text: string): boolean {
+  const trimmed = text.trim()
+  if (trimmed.length < 3 || trimmed.length > 50) return false
+
+  // Filter out common page headings
+  if (NON_NAME_PHRASES.includes(trimmed.toLowerCase())) return false
+
+  const words = trimmed.split(/\s+/)
+  if (words.length < 2 || words.length > 5) return false
+  // Each word should start with a capital letter
+  return words.every(w => /^[A-Z]/.test(w))
+}
+
 // Scrape Y Combinator company page for founders
 export async function scrapeYCCompanyPage(ycUrl: string): Promise<ScrapedContact[]> {
   try {
@@ -295,27 +365,76 @@ export async function scrapeYCCompanyPage(ycUrl: string): Promise<ScrapedContact
     const contacts: ScrapedContact[] = []
     const seen = new Set<string>()
 
-    // YC pages have founder info in specific sections
-    $('[class*="founder"], [class*="team-member"]').each((_, elem) => {
-      const $elem = $(elem)
+    // Strategy 1: Find avatar images from bookface-images S3 bucket
+    // YC pages show founder photos with their name in the alt attribute
+    // Structure: img[alt="Name"] inside a container with sibling div containing title
+    $('img').each((_, elem) => {
+      const src = $(elem).attr('src') || ''
+      const alt = $(elem).attr('alt') || ''
 
-      const name = $elem.find('h3, h4, [class*="name"]').first().text().trim()
-      const title = $elem.find('[class*="title"], [class*="role"]').first().text().trim()
+      // Only process bookface avatar images with person-like alt text
+      if (!src.includes('bookface-images') || !src.includes('avatar')) return
+      if (!looksLikePersonName(alt)) return
 
-      if (name && name.length > 2 && name.length < 50) {
-        const key = name.toLowerCase()
-        if (!seen.has(key)) {
-          seen.add(key)
-          contacts.push({
-            name,
-            title: title || 'Founder',
-            confidence: 0.95, // High confidence from YC pages
-            source: 'yc',
-            role: 'founder',
-          })
+      const name = alt.trim()
+      const key = name.toLowerCase()
+      if (seen.has(key)) return
+      seen.add(key)
+
+      // Navigate up to find the parent container, then look for title text
+      // The structure is: grandparent > [avatar div > img] + [info div > name + title]
+      let title = ''
+      const grandparent = $(elem).parent().parent()
+      grandparent.find('div').each((_, div) => {
+        const text = $(div).text().trim()
+        const cls = $(div).attr('class') || ''
+        // Title is typically in a div with gray text color class
+        if (cls.includes('text-gray') && text.length < 50 && text.length > 2) {
+          if (EXECUTIVE_KEYWORDS.some(kw => text.toLowerCase().includes(kw))) {
+            title = text
+          }
         }
-      }
+      })
+
+      contacts.push({
+        name,
+        title: title || 'Founder',
+        confidence: 0.95,
+        source: 'yc',
+        role: 'founder',
+      })
     })
+
+    // Strategy 2: Find title text containing founder keywords and look for nearby names
+    // This catches cases where avatar images don't have alt text
+    if (contacts.length === 0) {
+      $('div, span, p').each((_, elem) => {
+        const text = $(elem).text().trim()
+        const children = $(elem).children().length
+
+        // Only match leaf text nodes with founder keywords
+        if (children > 0 || text.length > 50 || text.length < 3) return
+        if (!EXECUTIVE_KEYWORDS.some(kw => text.toLowerCase().includes(kw))) return
+
+        // Look at siblings for the name
+        $(elem).siblings().each((_, sib) => {
+          const sibText = $(sib).text().trim()
+          if (looksLikePersonName(sibText)) {
+            const key = sibText.toLowerCase()
+            if (!seen.has(key)) {
+              seen.add(key)
+              contacts.push({
+                name: sibText,
+                title: text,
+                confidence: 0.95,
+                source: 'yc',
+                role: 'founder',
+              })
+            }
+          }
+        })
+      })
+    }
 
     return contacts
   } catch (error) {

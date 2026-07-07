@@ -5,6 +5,7 @@ import { FundingCard } from './funding-card'
 import { Pagination } from './pagination'
 import { Skeleton } from '@/components/ui/skeleton'
 import type { FundingFilters } from '@/types'
+import type { ColdEmailRecord } from './emailed-badge'
 
 interface FundingFeedProps {
   filters: FundingFilters
@@ -68,6 +69,7 @@ export function FundingFeed({ filters }: FundingFeedProps) {
   const [data, setData] = useState<FundingResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [emailedMap, setEmailedMap] = useState<Record<string, ColdEmailRecord>>({})
 
   useEffect(() => {
     async function fetchFundingEvents() {
@@ -80,6 +82,7 @@ export function FundingFeed({ filters }: FundingFeedProps) {
         if (filters.state) params.set('state', filters.state)
         if (filters.metro) params.set('metro', filters.metro)
         if (filters.city) params.set('city', filters.city)
+        if (filters.headcount) params.set('headcount', filters.headcount)
         if (filters.industry) params.set('industry', filters.industry)
         if (filters.roundType) params.set('roundType', filters.roundType)
         if (filters.minAmount) params.set('minAmount', filters.minAmount.toString())
@@ -88,15 +91,28 @@ export function FundingFeed({ filters }: FundingFeedProps) {
         if (filters.sortBy) params.set('sortBy', filters.sortBy)
         if (filters.page) params.set('page', filters.page.toString())
         if (filters.limit) params.set('limit', filters.limit.toString())
+        if (filters.search) params.set('search', filters.search)
 
-        const response = await fetch(`/api/funding?${params.toString()}`)
+        const [fundingRes, emailsRes] = await Promise.all([
+          fetch(`/api/funding?${params.toString()}`),
+          fetch('/api/cold-emails'),
+        ])
 
-        if (!response.ok) {
-          throw new Error('Failed to fetch funding events')
-        }
+        if (!fundingRes.ok) throw new Error('Failed to fetch funding events')
 
-        const result = await response.json()
+        const result = await fundingRes.json()
         setData(result)
+
+        if (emailsRes.ok) {
+          const emails: Array<ColdEmailRecord & { company: { id: string } }> = await emailsRes.json()
+          const map: Record<string, ColdEmailRecord> = {}
+          for (const e of emails) {
+            if (!map[e.company.id]) {
+              map[e.company.id] = { id: e.id, emailAddress: e.emailAddress, sentAt: e.sentAt, followUpStatus: e.followUpStatus, notes: e.notes }
+            }
+          }
+          setEmailedMap(map)
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An error occurred')
       } finally {
@@ -143,7 +159,7 @@ export function FundingFeed({ filters }: FundingFeedProps) {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {data.events.map((event) => (
-          <FundingCard key={event.id} event={event} />
+          <FundingCard key={event.id} event={event} coldEmail={emailedMap[event.company.id]} />
         ))}
       </div>
 

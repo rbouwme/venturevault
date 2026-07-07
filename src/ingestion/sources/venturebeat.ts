@@ -3,7 +3,7 @@ import type { FeedItem, ParsedFundingEvent } from '../types'
 
 export class VentureBeatSource extends BaseSource {
   name = 'venturebeat'
-  feedUrl = 'https://venturebeat.com/category/entrepreneur/feed/'
+  feedUrl = 'https://venturebeat.com/feed/'
 
   parseItem(item: FeedItem): ParsedFundingEvent | null {
     const title = item.title || ''

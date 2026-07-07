@@ -11,9 +11,14 @@ import { cn } from '@/lib/utils'
 const navItems = [
   { title: 'Dashboard', href: '/dashboard', icon: '📊' },
   { title: 'Watchlist', href: '/dashboard/watchlist', icon: '⭐' },
+  { title: 'Contacts', href: '/dashboard/contacts', icon: '👤' },
   { title: 'Prospects', href: '/dashboard/prospects', icon: '🎯' },
+  { title: 'Applications', href: '/dashboard/applications', icon: '💼' },
   { title: 'Saved Searches', href: '/dashboard/saved-searches', icon: '🔍' },
+  { title: 'Cold Emails', href: '/dashboard/cold-emails', icon: '📧' },
   { title: 'Outreach', href: '/dashboard/outreach', icon: '✉️' },
+  { title: 'Analytics', href: '/dashboard/analytics', icon: '📈' },
+  { title: 'Investors', href: '/dashboard/investors', icon: '🏦' },
   { title: 'Settings', href: '/dashboard/settings', icon: '⚙️' },
 ]
 
@@ -49,7 +54,7 @@ export function MobileNav() {
       </SheetTrigger>
       <SheetContent side="left" className="w-64 p-0">
         <div className="border-b p-4">
-          <span className="font-bold">Startup Funding Tracker</span>
+          <span className="font-bold">VentureVault</span>
         </div>
         <nav className="flex-1 space-y-1 p-4">
           {navItems.map((item) => (
