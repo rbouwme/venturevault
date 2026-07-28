@@ -5,7 +5,7 @@ import { getProspectNotes, createProspectNote } from '@/services/prospects'
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -14,7 +14,8 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const notes = await getProspectNotes(params.id)
+    const { id } = await params
+    const notes = await getProspectNotes(id)
 
     return NextResponse.json(notes)
   } catch (error) {
@@ -28,7 +29,7 @@ export async function GET(
 
 export async function POST(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -37,6 +38,7 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const { id } = await params
     const body = await request.json()
     const { content, type, reminderDate } = body
 
@@ -48,7 +50,7 @@ export async function POST(
     }
 
     const note = await createProspectNote({
-      prospectId: params.id,
+      prospectId: id,
       userId: session.user.id,
       content,
       type: type || 'NOTE',

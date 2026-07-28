@@ -5,7 +5,7 @@ import { updateProspect, archiveProspect, getProspectById } from '@/services/pro
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -14,7 +14,8 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const prospect = await getProspectById(session.user.id, params.id)
+    const { id } = await params
+    const prospect = await getProspectById(session.user.id, id)
 
     if (!prospect) {
       return NextResponse.json({ error: 'Prospect not found' }, { status: 404 })
@@ -32,7 +33,7 @@ export async function GET(
 
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -41,6 +42,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const { id } = await params
     const body = await request.json()
     const {
       status,
@@ -62,7 +64,7 @@ export async function PUT(
       updateData.lastContactedAt = lastContactedAt ? new Date(lastContactedAt) : null
     }
 
-    const prospect = await updateProspect(session.user.id, params.id, updateData)
+    const prospect = await updateProspect(session.user.id, id, updateData)
 
     return NextResponse.json(prospect)
   } catch (error: any) {
@@ -81,7 +83,7 @@ export async function PUT(
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -90,7 +92,8 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    await archiveProspect(session.user.id, params.id)
+    const { id } = await params
+    await archiveProspect(session.user.id, id)
 
     return NextResponse.json({ success: true })
   } catch (error: any) {
