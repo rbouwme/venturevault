@@ -174,15 +174,18 @@ export async function syncYCCompanies(): Promise<YCSyncResult> {
             },
           })
 
-          // Also try lowercase match if exact match fails
+          // Also try case-insensitive match if exact match fails
           const existingByNameLower = !existingByName
-            ? await prisma.$queryRawUnsafe<Array<{ id: string; description: string | null; linkedinUrl: string | null; logoUrl: string | null }>>(
-                `SELECT id, description, linkedinUrl, logoUrl FROM Company WHERE LOWER(name) = LOWER(?) AND dataSource != 'YC' LIMIT 1`,
-                ycCompany.name
-              )
+            ? await prisma.company.findFirst({
+                where: {
+                  name: { equals: ycCompany.name, mode: 'insensitive' },
+                  dataSource: { not: 'YC' },
+                },
+                select: { id: true, description: true, linkedinUrl: true, logoUrl: true },
+              })
             : null
 
-          const matchedCompany = existingByName || (existingByNameLower && existingByNameLower[0])
+          const matchedCompany = existingByName || existingByNameLower
 
           if (matchedCompany) {
             // Update existing company with YC data

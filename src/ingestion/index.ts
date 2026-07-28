@@ -1,13 +1,17 @@
 import { prisma } from '@/lib/prisma'
 import { TechCrunchSource } from './sources/techcrunch'
 import { VentureBeatSource } from './sources/venturebeat'
+import { BetaKitSource } from './sources/betakit'
+import { FinancialPostSource } from './sources/financialpost'
 import { NewsAPISource } from './sources/newsapi'
 import type { ParsedFundingEvent, IngestionResult } from './types'
 import type { IngestionStatus, LogLevel } from '@prisma/client'
 
-const sources: Record<string, TechCrunchSource | VentureBeatSource | NewsAPISource> = {
+const sources: Record<string, TechCrunchSource | VentureBeatSource | BetaKitSource | FinancialPostSource | NewsAPISource> = {
   techcrunch: new TechCrunchSource(),
   venturebeat: new VentureBeatSource(),
+  betakit: new BetaKitSource(),
+  financialpost: new FinancialPostSource(),
   // Only include NewsAPI if API key is configured
   ...(process.env.NEWSAPI_KEY ? { newsapi: new NewsAPISource() } : {}),
 }
@@ -140,13 +144,12 @@ async function processEvent(
 
   // Try case-insensitive match if exact match fails
   if (!company) {
-    const companies = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
-      `SELECT id FROM Company WHERE LOWER(name) = LOWER(?) AND archivedAt IS NULL LIMIT 1`,
-      event.companyName
-    )
-    if (companies.length > 0) {
-      company = await prisma.company.findUnique({ where: { id: companies[0].id } })
-    }
+    company = await prisma.company.findFirst({
+      where: {
+        name: { equals: event.companyName, mode: 'insensitive' },
+        archivedAt: null,
+      },
+    })
   }
 
   if (!company) {
