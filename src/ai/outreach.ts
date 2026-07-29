@@ -1,7 +1,7 @@
 import OpenAI from 'openai'
 import { prisma } from '@/lib/prisma'
 import crypto from 'crypto'
-import type { OutreachType } from '@prisma/client'
+import type { OutreachType } from '@/types/enums'
 
 const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || 'default-key-change-in-production'
 

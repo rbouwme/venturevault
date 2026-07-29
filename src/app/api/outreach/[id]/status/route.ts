@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { updateOutreachDraftStatus } from '@/services/user'
-import type { OutreachStatus } from '@prisma/client'
+import type { OutreachStatus } from '@/types/enums'
 
 export async function PUT(
   request: Request,

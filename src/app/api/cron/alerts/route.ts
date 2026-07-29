@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { sendAlertNotification } from '@/email'
-import type { Prisma, RoundType } from '@prisma/client'
+import type { Prisma } from '@prisma/client'
+import type { RoundType } from '@/types/enums'
 
 export async function GET(request: Request) {
   const authHeader = request.headers.get('authorization')
@@ -36,7 +37,7 @@ export async function GET(request: Request) {
     for (const alert of alerts) {
       alertsProcessed++
 
-      const filters = alert.filters as Record<string, unknown>
+      const filters = alert.filters as unknown as Record<string, unknown>
       const lastCheck = alert.lastSentAt || oneDayAgo
 
       const events = await findMatchingEvents(filters, lastCheck)
@@ -107,7 +108,7 @@ async function findMatchingEvents(
     companyWhere.state = filters.state as string
   }
   if (filters.industry) {
-    companyWhere.tags = { has: filters.industry as string }
+    companyWhere.tags = { contains: filters.industry as string }
   }
   if (filters.hiringNow) {
     companyWhere.jobPostings = {

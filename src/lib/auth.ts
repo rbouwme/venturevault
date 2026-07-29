@@ -61,7 +61,7 @@ export const authOptions: NextAuthOptions = {
           id: user.id,
           email: user.email,
           name: user.name,
-          role: user.role,
+          role: user.role as 'USER' | 'ADMIN',
         }
       },
     }),
@@ -76,7 +76,7 @@ export const authOptions: NextAuthOptions = {
             where: { id: user.id },
             select: { role: true },
           })
-          token.role = dbUser?.role || 'USER'
+          token.role = (dbUser?.role || 'USER') as 'USER' | 'ADMIN'
         } else {
           token.role = user.role
         }

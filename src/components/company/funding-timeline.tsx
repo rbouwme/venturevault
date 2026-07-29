@@ -60,7 +60,7 @@ export function FundingTimeline({ events }: FundingTimelineProps) {
                   {event.investors && event.investors.length > 0 && (
                     <p className="text-sm text-gray-600 mt-2">
                       <span className="font-medium">Investors:</span>{' '}
-                      {event.investors.join(', ')}
+                      {(typeof event.investors === 'string' ? JSON.parse(event.investors) as string[] : event.investors as string[]).join(', ')}
                     </p>
                   )}
 

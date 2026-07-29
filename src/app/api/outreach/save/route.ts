@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { createOutreachDraft } from '@/services/user'
-import type { OutreachType } from '@prisma/client'
+import type { OutreachType } from '@/types/enums'
 
 export async function POST(request: Request) {
   const session = await getServerSession(authOptions)

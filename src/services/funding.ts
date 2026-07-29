@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma'
-import { Prisma, RoundType } from '@prisma/client'
+import { Prisma } from '@prisma/client'
+import type { RoundType } from '@/types/enums'
 import { getMetroArea } from '@/lib/metro-areas'
 import type { FundingFilters, CompanyWithRelations, FundingEventWithCompany } from '@/types'
 
@@ -49,7 +50,7 @@ export async function getFundingEvents(filters: FundingFilters = {}): Promise<Fu
     ...(search && { name: { contains: search } }),
     ...(country && { country }),
     ...(state && { state }),
-    ...(industry && { tags: { has: industry } }),
+    ...(industry && { tags: { contains: industry } }),
     ...(hiringNow && {
       jobPostings: {
         some: {
@@ -146,7 +147,7 @@ export async function getFundingEventsCount(filters: FundingFilters = {}): Promi
     ...(search && { name: { contains: search } }),
     ...(country && { country }),
     ...(state && { state }),
-    ...(industry && { tags: { has: industry } }),
+    ...(industry && { tags: { contains: industry } }),
     ...(hiringNow && {
       jobPostings: {
         some: {

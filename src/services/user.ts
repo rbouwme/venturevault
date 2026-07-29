@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma'
-import type { OutreachStatus, OutreachType } from '@prisma/client'
+import type { OutreachStatus, OutreachType } from '@/types/enums'
 
 export async function getWatchlist(userId: string, country?: string) {
   return prisma.watchlist.findMany({

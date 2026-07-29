@@ -1,6 +1,6 @@
 import Parser from 'rss-parser'
 import type { FeedItem, ParsedFundingEvent, IngestionResult } from '../types'
-import type { RoundType } from '@prisma/client'
+import type { RoundType } from '@/types/enums'
 
 export abstract class BaseSource {
   protected parser: Parser

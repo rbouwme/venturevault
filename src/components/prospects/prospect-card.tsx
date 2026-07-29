@@ -168,14 +168,14 @@ function MetadataDetail({ type, meta }: { type: string; meta: Record<string, unk
   if (type === 'FUNDING_PATTERN') {
     return (
       <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
-        {meta.lastRound && <span>Last round: <strong>{String(meta.lastRound)}</strong></span>}
+        {!!meta.lastRound && <span>Last round: <strong>{String(meta.lastRound)}</strong></span>}
         {meta.monthsSince != null && (
           <span>
             Months since: <strong>{String(meta.monthsSince)}</strong>
             <span className="text-muted-foreground/60 ml-1">(sweet spot: 12–18)</span>
           </span>
         )}
-        {meta.lastAmount && <span>Raised: <strong>{formatAmount(String(meta.lastAmount))}</strong></span>}
+        {!!meta.lastAmount && <span>Raised: <strong>{formatAmount(String(meta.lastAmount))}</strong></span>}
       </div>
     )
   }

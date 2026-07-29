@@ -5,7 +5,7 @@ import { BetaKitSource } from './sources/betakit'
 import { FinancialPostSource } from './sources/financialpost'
 import { NewsAPISource } from './sources/newsapi'
 import type { ParsedFundingEvent, IngestionResult } from './types'
-import type { IngestionStatus, LogLevel } from '@prisma/client'
+import type { IngestionStatus, LogLevel } from '@/types/enums'
 
 const sources: Record<string, TechCrunchSource | VentureBeatSource | BetaKitSource | FinancialPostSource | NewsAPISource> = {
   techcrunch: new TechCrunchSource(),

@@ -1,4 +1,4 @@
-import type { RoundType } from '@prisma/client'
+import type { RoundType } from '@/types/enums'
 
 export interface FeedItem {
   title?: string

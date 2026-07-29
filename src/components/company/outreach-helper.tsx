@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { toast } from 'sonner'
 import type { CompanyWithRelations } from '@/types'
-import type { OutreachType } from '@prisma/client'
+import type { OutreachType } from '@/types/enums'
 
 interface OutreachHelperProps {
   company: CompanyWithRelations

@@ -29,7 +29,8 @@ import {
 import { toast } from 'sonner'
 import { formatDate } from '@/lib/utils'
 import { OUTREACH_TYPES, OUTREACH_STATUSES } from '@/lib/constants'
-import type { Company, OutreachDraft, OutreachStatus } from '@prisma/client'
+import type { Company, OutreachDraft } from '@prisma/client'
+import type { OutreachStatus } from '@/types/enums'
 
 type DraftWithCompany = OutreachDraft & { company: Company }
 
@@ -80,7 +81,7 @@ export function OutreachTable({ drafts: initialDrafts }: OutreachTableProps) {
   }
 
   const getStatusBadge = (status: OutreachStatus) => {
-    const variants: Record<OutreachStatus, string> = {
+    const variants: Partial<Record<OutreachStatus, string>> = {
       DRAFT: 'bg-gray-100 text-gray-800',
       SENT: 'bg-blue-100 text-blue-800',
       RESPONDED: 'bg-green-100 text-green-800',
@@ -151,7 +152,7 @@ export function OutreachTable({ drafts: initialDrafts }: OutreachTableProps) {
                   }
                 >
                   <SelectTrigger className="w-32">
-                    <SelectValue>{getStatusBadge(draft.status)}</SelectValue>
+                    <SelectValue>{getStatusBadge(draft.status as OutreachStatus)}</SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     {OUTREACH_STATUSES.map((status) => (

@@ -465,14 +465,14 @@ export async function computeAllRecommendations(): Promise<{
       })
     )
 
-    batchResults.forEach((result, idx) => {
+    batchResults.forEach((settled, idx) => {
       result.usersProcessed++
 
-      if (result.status === 'fulfilled') {
-        result.recommendationsCreated += result.value
+      if (settled.status === 'fulfilled') {
+        result.recommendationsCreated += settled.value
       } else {
         const user = batch[idx]
-        result.errors.push(`Error for user ${user.email}: ${result.reason}`)
+        result.errors.push(`Error for user ${user.email}: ${settled.reason}`)
       }
     })
 
